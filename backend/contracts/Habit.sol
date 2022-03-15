@@ -12,7 +12,9 @@ contract Habit {
     // user addr -> User struct & attributes
     // Mapping users address -> user
     mapping(address => user) users;
+    // address[] user_addresses; // maybe this
     address owner;
+    // all times in timestamp as solidity uses unix timestamp
     uint start_time;
     uint end_time;
     uint256 pool;
@@ -37,11 +39,34 @@ contract Habit {
         users[msg.sender] = user_; // add to user mapping
     }
 
+    // curr day is the day in offset [0,..5]
+    function verify_user(address user_addr, uint8 verify_value, uint curr_day) public {
+        // if called by user, change 'user' to 'msg.sender'
+        require(users[user_addr].addr != address(0), "User not in challenge");
+        
+        if (verify_value == 0) {
+            users[user_addr].is_loser = true;
+        } else {
+            for (uint dayNum = 0; dayNum <= curr_day; dayNum++) {
+                // if any day has failed, user is loser and break
+                if (users[user_addr].check_list[dayNum] == 0) {
+                    users[user_addr].is_loser = true;
+                    break;
+                }
+            }
+            // else fill up the val
+            users[user_addr].check_list[curr_day] = verify_value;
+        }
+    }
+
     /*
     // users call this to verify their habit each day
     // will also be used to check if user
     function verify() {
-        require(msg.sender in users)
+        //  user needs to be in challenge before verifying
+        require(users[msg.sender].addr != address(0), "User not in challenge")
+        // get time of the current block, refreshes every 10 seconds.
+        time_of_verification = block.timestamp 
         require(start date <= current date <= end date)
         user  = users[msg.sender]
         require(user.is_loser is False) // no point verifying a loser
