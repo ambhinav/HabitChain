@@ -12,7 +12,7 @@ contract Habit {
     // user addr -> User struct & attributes
     // Mapping users address -> user
     mapping(address => user) users;
-    address owner;
+    address owner = msg.sender;
     uint start_time;
     uint end_time;
     uint256 pool;
@@ -20,7 +20,7 @@ contract Habit {
 
     // Create the challenge and set a date range
     // client side will convert date/time to block.timestamp offset
-    constructor(uint start_time_) public payable {
+    constructor(uint start_time_) public {
         owner = msg.sender;
         start_time = start_time_;
         end_time = start_time + 5 days;
