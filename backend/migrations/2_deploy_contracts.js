@@ -1,5 +1,5 @@
-var Habit = artifacts.require("./Habit.sol");
+const Habit = artifacts.require("Habit");
 
-module.exports = function(deployer) {
-    deployer.deploy(Habit, 1000);
+module.exports = (deployer, network, accounts) => {
+    deployer.deploy(Habit);
 };
