@@ -4,7 +4,7 @@ contract Habit {
 
     struct user {
         address addr;
-        uint pledge_amt;
+        uint256 pledge_amt;
         bool is_loser;
         uint8[5] check_list;
     }
@@ -19,20 +19,20 @@ contract Habit {
         uint256 pool;
     }
 
-    uint256 public numHabits = 0;
+    uint256 public num_habits = 0;
     mapping(uint256 => habit) public habits;
 
     // Checks if valid Id
-    modifier isValidId(uint256 habitId) {
-        require(habitId < numHabits, "Invalid habit id");
+    modifier is_valid_id(uint256 habit_id) {
+        require(habit_id < num_habits, "Invalid habit id");
         _;
     }
 
     // Create the challenge and set a date range
     // client side will convert date/time to block.timestamp offset
-    function createHabit(uint start_time_) public {
+    function create_habit(uint start_time_) public {
 
-        habit memory newHabit = habit(
+        habit memory new_habit = habit(
             {
                 owner: msg.sender,
                 start_time: start_time_,
@@ -41,18 +41,18 @@ contract Habit {
             }
         );
 
-        uint256 newHabitId = numHabits++;
-        habits[newHabitId] = newHabit;
+        uint256 new_habit_id = num_habits++;
+        habits[new_habit_id] = new_habit;
     }
 
     // user joins the habit with an amount to pledge
     // set the check_list size to be the date_range
-    // function join() public payable {
-    //     require(users[msg.sender].addr == address(0), "User already exists");
-    //     user memory user_ = user(msg.sender, msg.value, false, [0, 0, 0, 0, 0]); // create user
-    //     pool += msg.value; // increase pool
-    //     users[msg.sender] = user_; // add to user mapping
-    // }
+    function join(uint256 habit_id) public payable {
+        require(habits[habit_id].users[msg.sender].addr == address(0), "User already exists");
+        user memory user_ = user(msg.sender, msg.value, false, [0, 0, 0, 0, 0]); // create user
+        habits[habit_id].pool += msg.value; // increase pool
+        habits[habit_id].users[msg.sender] = user_; // add to user mapping
+    }
 
     /*
     // users call this to verify their habit each day
@@ -99,16 +99,16 @@ contract Habit {
     selfdestruct(owner) // destroy the contract & send
     */
 
-    function getStartTime(uint256 habitId) public view isValidId(habitId) returns (uint) {
-        return habits[habitId].start_time;
+    function get_start_time(uint256 habit_id) public view is_valid_id(habit_id) returns (uint) {
+        return habits[habit_id].start_time;
     }
 
-    function getEndTime(uint256 habitId) public view isValidId(habitId) returns (uint) {
-        return habits[habitId].end_time;
+    function get_end_time(uint256 habit_id) public view is_valid_id(habit_id) returns (uint) {
+        return habits[habit_id].end_time;
     }
 
-    function getOwner(uint256 habitId) public view isValidId(habitId) returns (address) {
-        return habits[habitId].owner;
+    function get_owner(uint256 habit_id) public view is_valid_id(habit_id) returns (address) {
+        return habits[habit_id].owner;
     }
 
 }

@@ -7,17 +7,17 @@ var Habit = artifacts.require("../contracts/Habit.sol");
 contract('Habit', function(accounts) {
 
     before(async () => {
-        habitInstance = await Habit.deployed();
+        habit_instance = await Habit.deployed();
     });
     console.log("Testing Habit Contract");
 
     it('Create Habit', async () => {
         // Corresponds to 0.1 ETH
-        let makeHabit = await habitInstance.createHabit(1000, {from: accounts[1]});
+        let make_habit = await habit_instance.create_habit(1000, {from: accounts[1]});
 
 
         assert.notStrictEqual(
-            makeHabit,
+            make_habit,
             undefined,
             "Failed to make habit"
         );
@@ -25,9 +25,9 @@ contract('Habit', function(accounts) {
     });
 
     it('Verify habit fields', async () => {
-        let _s_time = await habitInstance.getStartTime(0)
-        let _e_time = await habitInstance.getEndTime(0)
-        let _owner = await habitInstance.getOwner(0)
+        let _s_time = await habit_instance.get_start_time(0)
+        let _e_time = await habit_instance.get_end_time(0)
+        let _owner = await habit_instance.get_owner(0)
 
         assert.strictEqual(
             _s_time.toNumber(),
