@@ -66,8 +66,15 @@ contract Habit {
     */
     function join_habit(uint256 habit_id) public payable is_valid_id(habit_id) {
         require(msg.value > 0, "Pledge amount must be more than 0");
-        require(habits[habit_id].users[msg.sender].addr == address(0), "User already exists");
-        user memory user_ = user(msg.sender, msg.value, false, [0, 0, 0, 0, 0]);
+        require(habits[habit_id].users[msg.sender].addr == address(0), "User has already joined habit");
+        user memory user_ = user(
+            {
+                addr: msg.sender,
+                pledge_amt: msg.value,
+                is_loser: false,
+                check_list: [0, 0, 0, 0, 0] 
+            }
+        );
         habits[habit_id].pool += msg.value;
         habits[habit_id].users[msg.sender] = user_;
         emit JoinHabit(msg.sender, habit_id, msg.value);
@@ -128,6 +135,19 @@ contract Habit {
 
     function get_owner(uint256 habit_id) public view is_valid_id(habit_id) returns (address) {
         return habits[habit_id].owner;
+    }
+
+    function get_num_habits() public view returns (uint256) {
+        return num_habits;
+    }
+
+    function get_pool(uint256 habit_id) public view is_valid_id(habit_id) returns (uint256) {
+        return habits[habit_id].pool;
+    }
+
+    /// Checks if user joined a habit
+    function is_user_joined_habit(uint256 habit_id, address user_) public view is_valid_id(habit_id) returns (bool) {
+        return habits[habit_id].users[user_].addr != address(0);
     }
 
 }
