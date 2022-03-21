@@ -11,6 +11,7 @@ contract Habit {
 
     // user addr -> User struct & attributes
     // Mapping users address -> user
+    
     struct habit {
         mapping(address => user) users;
         address owner;
