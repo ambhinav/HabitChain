@@ -1,4 +1,5 @@
 pragma solidity ^0.5.0;
+import {BokkyPooBahsDateTimeLibrary} from "./datelib2.sol";
 
 contract Habit {
 
@@ -80,6 +81,59 @@ contract Habit {
         emit JoinHabit(msg.sender, habit_id, msg.value);
     }
 
+    function verify(uint256 habit_id, address user_addr) returns (bool) {
+        uint curr_time = block.timestamp;
+        uint habit_start_time = habits[habit_id].start_time;
+
+        uint day_num = BokkyPooBahsDateTimeLibrary.diffDays(habit_start_time, curr_time);
+        if (day_num > 5) {
+            return false;
+        }
+        user curr_user = habits[habit_id].users[user_addr];
+        if (curr_user.is_loser) {
+            return false;
+        }
+
+        for (uint i=0; i<day_num-1; i++) {
+            if (curr_user.check_list[i] == 0) {
+                curr_user.is_loser = true;
+                return false;
+            }
+        }
+        curr_user.check_list[day_num-1] = 1;
+        return true;
+    }
+
+    modifier is_not_loser(uint256 habit_id, address user_addr) public is_valid_id(habit_id) {
+        require(!habits[habit_id].users[user_addr].is_loser, "User has lost, no need to check on him.");
+        _;
+    }
+
+    /**
+    * @dev A more abstract verification function. Front end tells us who finished what habit.
+    * @param habit_id expects a valid habit id
+    * @param user_addr expects a valid user address
+    * @param date_num expects the index to tick the check_list for the user
+    * 
+    * @return bool where true if user is still a winner. else return true to say hes a loser.
+    * Requirements:
+    * - `habit_id` is a valid id
+    * - `msg.sender` is not part of challenge already
+    */
+    function v2(uint256 habit_id, address user_addr, uint date_num) public is_not_loser(habit_id, user_addr)  returns (bool) {
+
+        // for the days up to day offset, see if the other days have been checked.
+        // if any of these days have not been filled, 
+        for (uint i=0; i<day_num-1; i++) {
+            if (curr_user.check_list[i] == 0) {
+                curr_user.is_loser = true;
+                return false;
+            }
+        }
+        curr_user.check_list[day_num-1] = 1;
+        return true;
+    }
+
     /*
     // users call this to verify their habit each day
     // will also be used to check if user
@@ -127,6 +181,21 @@ contract Habit {
 
     function get_start_time(uint256 habit_id) public view is_valid_id(habit_id) returns (uint) {
         return habits[habit_id].start_time;
+    }
+
+    /*
+    function timestampToDate(uint timestamp) internal pure returns (uint year, uint month, uint day) {
+        (year, month, day) = _daysToDate(timestamp / SECONDS_PER_DAY);
+    }
+    */
+
+    function get_start_time2(uint256 habit_id) public view is_valid_id(habit_id) returns (uint year, uint month, uint day){
+        /*
+        memory (year, month, day) = BokkyPooBahsDateTimeLibrary.timestampToDate(habits[habit_id].start_time);
+        return (year, month, day);
+        */
+
+        return BokkyPooBahsDateTimeLibrary.timestampToDate(habits[habit_id].start_time);
     }
 
     function get_end_time(uint256 habit_id) public view is_valid_id(habit_id) returns (uint) {
