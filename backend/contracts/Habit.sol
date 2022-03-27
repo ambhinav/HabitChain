@@ -21,18 +21,27 @@ contract Habit {
     }
 
     uint256 public num_habits = 0;
+    uint256 public main_pool = 0;
     mapping(uint256 => habit) public habits;
 
-    // Checks if valid Id
+    event CreateHabit(address owner, uint256 habit_id, uint start_time);
+    event JoinHabit(address joiner, uint256 habit_id, uint256 pledge_amt);
+
     modifier is_valid_id(uint256 habit_id) {
         require(habit_id < num_habits, "Invalid habit id");
         _;
     }
 
-    // Create the challenge and set a date range
-    // client side will convert date/time to block.timestamp offset
+    /**
+    * @dev Creates and starts the challenge
+    * @param start_time_ expects Unix timestamp in seconds
+    *
+    * Requirements:
+    *
+    * - `start_time_` must be in the future
+    */
     function create_habit(uint start_time_) public {
-
+        require(block.timestamp < start_time_, "Start time must be in the future");
         habit memory new_habit = habit(
             {
                 owner: msg.sender,
@@ -44,15 +53,31 @@ contract Habit {
 
         uint256 new_habit_id = num_habits++;
         habits[new_habit_id] = new_habit;
+        emit CreateHabit(msg.sender, new_habit_id, start_time_);
     }
 
-    // user joins the habit with an amount to pledge
-    // set the check_list size to be the date_range
-    function join(uint256 habit_id) public payable {
-        require(habits[habit_id].users[msg.sender].addr == address(0), "User already exists");
-        user memory user_ = user(msg.sender, msg.value, false, [0, 0, 0, 0, 0]); // create user
-        habits[habit_id].pool += msg.value; // increase pool
-        habits[habit_id].users[msg.sender] = user_; // add to user mapping
+    /**
+    * @dev User joins the challenge with a pledge
+    * @param habit_id expects a valid habit id
+    * 
+    * Requirements:
+    * - `habit_id` is a valid id
+    * - `msg.sender` is not part of challenge already
+    */
+    function join_habit(uint256 habit_id) public payable is_valid_id(habit_id) {
+        require(msg.value > 0, "Pledge amount must be more than 0");
+        require(habits[habit_id].users[msg.sender].addr == address(0), "User has already joined habit");
+        user memory user_ = user(
+            {
+                addr: msg.sender,
+                pledge_amt: msg.value,
+                is_loser: false,
+                check_list: [0, 0, 0, 0, 0] 
+            }
+        );
+        habits[habit_id].pool += msg.value;
+        habits[habit_id].users[msg.sender] = user_;
+        emit JoinHabit(msg.sender, habit_id, msg.value);
     }
 
     // curr day is the day in offset [0,..5]
@@ -133,6 +158,19 @@ contract Habit {
 
     function get_owner(uint256 habit_id) public view is_valid_id(habit_id) returns (address) {
         return habits[habit_id].owner;
+    }
+
+    function get_num_habits() public view returns (uint256) {
+        return num_habits;
+    }
+
+    function get_pool(uint256 habit_id) public view is_valid_id(habit_id) returns (uint256) {
+        return habits[habit_id].pool;
+    }
+
+    /// Checks if user joined a habit
+    function is_user_joined_habit(uint256 habit_id, address user_) public view is_valid_id(habit_id) returns (bool) {
+        return habits[habit_id].users[user_].addr != address(0);
     }
 
 }
