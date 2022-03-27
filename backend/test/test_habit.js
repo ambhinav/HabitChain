@@ -38,9 +38,22 @@ contract('Habit', function(accounts) {
 
     it('Verify habit fields', async () => {
         let _s_time = await habit_instance.get_start_time(0);
+        let obj1 = await habit_instance.get_start_time2(0);
         let _e_time = await habit_instance.get_end_time(0);
         let _owner = await habit_instance.get_owner(0);
         let num_habits = await habit_instance.get_num_habits();
+
+        // print type of obj1
+        console.log(typeof obj1);
+        console.log(obj1[0].toNumber());
+        console.log(obj1[1].toNumber());
+        console.log(obj1[2].toNumber());
+
+
+
+
+        console.log("Start time: " + _s_time);
+        //console.log("Start time2: ", y.toNumber() , m.toNumber(), d.toNumber());
 
         assert.strictEqual(
             _s_time.toNumber(),
