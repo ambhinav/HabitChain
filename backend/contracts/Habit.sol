@@ -80,33 +80,10 @@ contract Habit {
         emit JoinHabit(msg.sender, habit_id, msg.value);
     }
 
-    // curr day is the day in offset [0,..5]
-    function verify_user(address user_addr, uint8 verify_value, uint curr_day) public {
-        // if called by user, change 'user' to 'msg.sender'
-        require(users[user_addr].addr != address(0), "User not in challenge");
-        
-        if (verify_value == 0) {
-            users[user_addr].is_loser = true;
-        } else {
-            for (uint dayNum = 0; dayNum <= curr_day; dayNum++) {
-                // if any day has failed, user is loser and break
-                if (users[user_addr].check_list[dayNum] == 0) {
-                    users[user_addr].is_loser = true;
-                    break;
-                }
-            }
-            // else fill up the val
-            users[user_addr].check_list[curr_day] = verify_value;
-        }
-    }
-
     /*
     // users call this to verify their habit each day
     // will also be used to check if user
     function verify() {
-        //  user needs to be in challenge before verifying
-        require(users[msg.sender].addr != address(0), "User not in challenge")
-        // get time of the current block, refreshes every 10 seconds.
         time_of_verification = block.timestamp 
         require(start date <= current date <= end date)
         user  = users[msg.sender]
@@ -174,4 +151,3 @@ contract Habit {
     }
 
 }
-
