@@ -102,4 +102,6 @@ contract('Habit', function(accounts) {
             "user not reflected in habit's users mapping"
         )
     });
+
+    
 });

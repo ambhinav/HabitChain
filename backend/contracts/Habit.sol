@@ -14,12 +14,15 @@ contract Habit {
     
     struct habit {
         mapping(address => user) users;
+        mapping(uint256 => address) user_addresses;
         address owner;
         uint start_time;
         uint end_time;
         uint256 pool;
+        uint256 num_users;
     }
 
+    address con_owner = msg.sender;
     uint256 public num_habits = 0;
     uint256 public main_pool = 0;
     mapping(uint256 => habit) public habits;
@@ -47,7 +50,8 @@ contract Habit {
                 owner: msg.sender,
                 start_time: start_time_,
                 end_time: start_time_ + 5 days,
-                pool: 0
+                pool: 0,
+                num_users: 0
             }
         );
 
@@ -77,9 +81,40 @@ contract Habit {
         );
         habits[habit_id].pool += msg.value;
         habits[habit_id].users[msg.sender] = user_;
+        // Added these two lines to keep track of all the addresses taking part in this habit
+        habits[habit_id].user_addresses[habits[habit_id].num_users] = msg.sender;
+        habits[habit_id].num_users++;
         emit JoinHabit(msg.sender, habit_id, msg.value);
     }
 
+    /**
+    * @dev Ends the challenge and distributes the reward
+    * @param habit_id expects a valid habit id
+    * 
+    * Requirements:
+    * - `habit_id` is a valid id
+    * - `msg.sender` is owner of this contract
+    */
+    function end_habit(uint256 habit_id) public is_valid_id(habit_id) {
+        require(msg.sender == con_owner, "Only owner of this contract can call this method");
+        require(block.timestamp > habits[habit_id].end_time, "Can only end this habit after end time");
+        address[] memory winners = new address[](habits[habit_id].num_users);
+        uint256 num_winners = 0;
+        for (uint i = 0; i < habits[habit_id].num_users; i ++) {
+            address working_user_add = habits[habit_id].user_addresses[i];
+            user memory working_user = habits[habit_id].users[working_user_add];
+            if (!working_user.is_loser) {
+                winners[i] = working_user_add;
+                num_winners++;
+            }
+        }
+        uint256 to_distribute = habits[habit_id].pool / num_winners;
+        for (uint j = 0; j < num_winners; j++) {
+            address payable recipient = address(uint160(winners[j]));
+            recipient.transfer(to_distribute);
+        }
+        delete habits[habit_id];
+    }
     /*
     // users call this to verify their habit each day
     // will also be used to check if user
