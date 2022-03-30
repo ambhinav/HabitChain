@@ -29,6 +29,7 @@ contract Habit {
 
     event CreateHabit(address owner, uint256 habit_id, uint start_time);
     event JoinHabit(address joiner, uint256 habit_id, uint256 pledge_amt);
+    event EndHabit(address winner, uint256 habit_id, uint256 win_amt);
 
     modifier is_valid_id(uint256 habit_id) {
         require(habit_id < num_habits, "Invalid habit id");
@@ -97,7 +98,7 @@ contract Habit {
     */
     function end_habit(uint256 habit_id) public is_valid_id(habit_id) {
         require(msg.sender == con_owner, "Only owner of this contract can call this method");
-        require(block.timestamp > habits[habit_id].end_time, "Can only end this habit after end time");
+        // require(block.timestamp > habits[habit_id].end_time, "Can only end this habit after end time");
         address[] memory winners = new address[](habits[habit_id].num_users);
         uint256 num_winners = 0;
         for (uint i = 0; i < habits[habit_id].num_users; i ++) {
@@ -112,7 +113,9 @@ contract Habit {
         for (uint j = 0; j < num_winners; j++) {
             address payable recipient = address(uint160(winners[j]));
             recipient.transfer(to_distribute);
+            emit EndHabit(recipient, habit_id, to_distribute);
         }
+
         delete habits[habit_id];
     }
     /*
@@ -183,6 +186,11 @@ contract Habit {
     /// Checks if user joined a habit
     function is_user_joined_habit(uint256 habit_id, address user_) public view is_valid_id(habit_id) returns (bool) {
         return habits[habit_id].users[user_].addr != address(0);
+    }
+
+    // Returns owner of contract
+    function get_con_owner() public view returns (address) {
+        return con_owner;
     }
 
 }
