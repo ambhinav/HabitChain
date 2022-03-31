@@ -1,6 +1,7 @@
 const _deploy_contracts = require("../migrations/2_deploy_contracts");
 const truffleAssert = require('truffle-assertions');
 var assert = require('assert');
+const { verify } = require("crypto");
 
 var Habit = artifacts.require("../contracts/Habit.sol");
 
@@ -113,6 +114,56 @@ contract('Habit', function(accounts) {
             is_user_joined_habit_zero,
             true,
             "user not reflected in habit's users mapping"
+        )
+    });
+
+    /*
+    user1 verifies on days 1 to 3 (0 to 2 index)
+    */
+    it("Verifying consistently up to day offset results in a winner", async () => {
+        let user1_day0_verified = await habit_instance.verify(0, accounts[1], 0);
+        let user1_day1_verified = await habit_instance.verify(0, accounts[1], 1);
+        let user1_day2_verified = await habit_instance.verify(0, accounts[1], 2);
+        // console.log(user1_day0_verified, user1_day1_verified, user1_day2_verified)
+        let is_user1_loser1 = await habit_instance.is_user_a_loser(0, accounts[1]);
+        /* check user1 array after 3 days
+        let is_user1_array1 = await habit_instance.get_user_check_list.call(0, accounts[1]);
+        // loop through array of big numbers
+        for (let i = 0; i < is_user1_array1.length; i++) {
+            console.log(is_user1_array1[i].toNumber());
+        }
+        */
+        assert.strictEqual(
+            is_user1_loser1,
+            false,
+            "users check_list not filled properly"
+        )
+
+    });
+
+    /*
+    user1 skips verifying on day 4
+    user1 verifies on day 5. user1 should be labelled as a loser.
+    */
+    it("Skipping a day and then verify results in a loser", async () => {
+
+        let user1_day4_verified = await habit_instance.verify(0, accounts[1], 4);
+        // console.log(user1_day4_verified);
+        // let is_user1_array2 = await habit_instance.get_user_check_list(0, accounts[1]);
+        /* check user1 array after 5 days and skipping day 4
+        let is_user1_array2 = await habit_instance.get_user_check_list.call(0, accounts[1]);
+        // loop through array of big numbers
+        for (let i = 0; i < is_user1_array2.length; i++) {
+            console.log(is_user1_array2[i].toNumber());
+        }
+        */
+
+        // console.log(is_user1_array2);
+        let is_user1_loser2 = await habit_instance.is_user_a_loser(0, accounts[1]);
+        assert.strictEqual(
+            is_user1_loser2,
+            true,
+            "users check_list not filled properly 2"
         )
     });
 });
