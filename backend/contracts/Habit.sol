@@ -101,19 +101,23 @@ contract Habit {
         // require(block.timestamp > habits[habit_id].end_time, "Can only end this habit after end time");
         address[] memory winners = new address[](habits[habit_id].num_users);
         uint256 num_winners = 0;
+        uint256 loser_pool = habits[habit_id].pool;
         for (uint i = 0; i < habits[habit_id].num_users; i ++) {
-            address working_user_add = habits[habit_id].user_addresses[i];
-            user memory working_user = habits[habit_id].users[working_user_add];
-            if (!working_user.is_loser) {
-                winners[i] = working_user_add;
+            address working_user_addr = habits[habit_id].user_addresses[i];
+            user memory curr_user = habits[habit_id].users[working_user_addr];
+            if (!curr_user.is_loser) {
+                winners[num_winners] = working_user_addr;
+                loser_pool -= curr_user.pledge_amt;
                 num_winners++;
             }
         }
-        uint256 to_distribute = habits[habit_id].pool / num_winners;
+        uint256 winner_pool = habits[habit_id].pool - loser_pool;
         for (uint j = 0; j < num_winners; j++) {
             address payable recipient = address(uint160(winners[j]));
-            recipient.transfer(to_distribute);
-            emit EndHabit(recipient, habit_id, to_distribute);
+            uint to_receive = habits[habit_id].users[winners[j]].pledge_amt;
+            to_receive = to_receive + (to_receive/winner_pool) * loser_pool;
+            recipient.transfer(to_receive);
+            emit EndHabit(recipient, habit_id, to_receive);
         }
 
         delete habits[habit_id];
