@@ -140,6 +140,40 @@ contract('Habit', function(accounts) {
         )
 
     });
+    it('End habit fails when non contract owner calls it', async () => {
+        return truffleAssert.reverts(
+            habit_instance.end_habit(0, {from: accounts[1]}),
+            "Only owner of this contract can call this method"
+        );
+    });
+    
+    // it('Unable to call method before end time', async () => {
+    //     return truffleAssert.reverts(
+    //         habit_instance.end_habit(0, {from: accounts[0]}),
+    //         "Can only end this habit after end time"
+    //     );
+    // });
+
+    it('Returns money to winners', async () => {
+        // await web3.currentProvider.send({
+        //     jsonrpc: "2.0",
+        //     method: "evm_increaseTime",
+        //     params: [433e3],
+        //     id: 123
+        //     });
+        let end_habit = await habit_instance.end_habit(0, {from: accounts[0]});
+
+        assert.notStrictEqual(
+            end_habit,
+            undefined,
+            "Failed to end habit"
+        );
+
+        truffleAssert.eventEmitted(end_habit, 'EndHabit', (ev) => {
+            return ev.winner == accounts[1] && ev.habit_id == 0 &&
+                expect(ev.win_amt).to.eql(web3.utils.toBN(1e18)); 
+        }, 'End Habit event not emitted with correct params');
+    });
 
     /*
     user1 skips verifying on day 4
@@ -166,4 +200,5 @@ contract('Habit', function(accounts) {
             "users check_list not filled properly 2"
         )
     });
+    
 });
