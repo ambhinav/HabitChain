@@ -2,11 +2,13 @@
   "name": "client",
   "version": "0.1.0",
   "private": true,
+  "proxy": "http://localhost:8000",
   "dependencies": {
     "@emotion/react": "^11.8.2",
     "@emotion/styled": "^11.8.1",
     "@mui/material": "^5.5.2",
     "@mui/styles": "^5.5.1",
+    "@slider-captcha/react": "^1.0.0",
     "axios": "^0.26.1",
     "dotenv": "^16.0.0",
     "moment": "^2.29.1",
