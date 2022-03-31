@@ -4,7 +4,15 @@ import getWeb3 from "./getWeb3";
 import Home from "./components/Home";
 import UploadActivity from "./components/UploadActivity";
 import ConnectStrava from "./components/ConnectStrava";
-import { AppBar, CircularProgress, Toolbar, Typography } from "@mui/material";
+import VerifyCaptcha from "./components/VerifyCaptcha";
+import {
+  AppBar,
+  Box,
+  Button,
+  CircularProgress,
+  Toolbar,
+  Typography,
+} from "@mui/material";
 import { makeStyles } from "@mui/styles";
 import Token from "./components/Token";
 
@@ -81,19 +89,25 @@ function App() {
   // } else {
   return (
     <div className="App">
-      <AppBar position="static">
-        <Toolbar>
-          <Typography variant="h1">HabitChain</Typography>
-        </Toolbar>
-      </AppBar>
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" exact element={<Home />} />
-          <Route path="/fitnessTracker" exact element={<UploadActivity />} />
-          <Route path="/connectTracker" exact element={<ConnectStrava />} />
-          <Route path="/token" exact element={<Token />} />
-        </Routes>
-      </BrowserRouter>
+      <Box sx={{ flexGrow: 1 }}>
+        <AppBar position="static">
+          <Toolbar>
+            <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
+              HabitChain
+            </Typography>
+            <Button color="inherit">Login</Button>
+          </Toolbar>
+        </AppBar>
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" exact element={<Home />} />
+            <Route path="/fitnessTracker" exact element={<UploadActivity />} />
+            <Route path="/connectTracker" exact element={<ConnectStrava />} />
+            <Route path="/token" exact element={<Token />} />
+            <Route path="/riseAndShine" exact element={<VerifyCaptcha />} />
+          </Routes>
+        </BrowserRouter>
+      </Box>
     </div>
   );
   //}
