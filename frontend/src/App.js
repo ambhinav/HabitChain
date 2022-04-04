@@ -1,10 +1,10 @@
 import React, { Component, useState } from "react";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
-import getWeb3 from "./getWeb3";
 import Home from "./components/Home";
 import UploadActivity from "./components/UploadActivity";
 import ConnectStrava from "./components/ConnectStrava";
 import VerifyCaptcha from "./components/VerifyCaptcha";
+import CreateHabit from "./components/JoinHabit";
 import {
   AppBar,
   Box,
@@ -59,19 +59,6 @@ function App() {
   //   }
   // };
 
-  const runExample = async () => {
-    // const { accounts, contract } = this.state;
-
-    // Stores a given value, 5 by default.
-    await contract.methods.set(5).send({ from: accounts[0] });
-
-    // Get the value from the contract to prove it worked.
-    const response = await contract.methods.get().call();
-
-    // Update state with the result.
-    // this.setState({ storageValue: response });
-    setStorageValue(response);
-  };
 
   // if (!web3) {
   //   return (
@@ -105,6 +92,7 @@ function App() {
             <Route path="/connectTracker" exact element={<ConnectStrava />} />
             <Route path="/token" exact element={<Token />} />
             <Route path="/riseAndShine" exact element={<VerifyCaptcha />} />
+            <Route path="/createHabit" exact element={<CreateHabit />} />
           </Routes>
         </BrowserRouter>
       </Box>
