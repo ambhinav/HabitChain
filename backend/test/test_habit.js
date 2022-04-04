@@ -2,6 +2,7 @@ const _deploy_contracts = require("../migrations/2_deploy_contracts");
 const truffleAssert = require('truffle-assertions');
 var assert = require('assert');
 const { verify } = require("crypto");
+const helper = require('./truffleTestHelper');
 
 var Habit = artifacts.require("../contracts/Habit.sol");
 
@@ -45,15 +46,15 @@ contract('Habit', function(accounts) {
         let num_habits = await habit_instance.get_num_habits();
 
         // print type of obj1
-        console.log(typeof obj1);
-        console.log(obj1[0].toNumber());
-        console.log(obj1[1].toNumber());
-        console.log(obj1[2].toNumber());
+        // console.log(typeof obj1);
+        // console.log(obj1[0].toNumber());
+        // console.log(obj1[1].toNumber());
+        // console.log(obj1[2].toNumber());
 
 
 
 
-        console.log("Start time: " + _s_time);
+        // console.log("Start time: " + _s_time);
         //console.log("Start time2: ", y.toNumber() , m.toNumber(), d.toNumber());
 
         assert.strictEqual(
@@ -84,17 +85,27 @@ contract('Habit', function(accounts) {
 
     it('User can join habit', async () => {
         let user_joins = await habit_instance.join_habit(0, {from: accounts[1], value: web3.utils.toBN(1e18)});
+        let user_joins_2 = await habit_instance.join_habit(0, {from: accounts[2], value: web3.utils.toBN(1e18)});
 
         assert.notStrictEqual(
             user_joins,
             undefined,
-            "Failed to join habit"
+            "User 1 failed to join habit"
+        );
+        assert.notStrictEqual(
+            user_joins_2,
+            undefined,
+            "User 2 failed to join habit"
         );
 
         truffleAssert.eventEmitted(user_joins, 'JoinHabit', (ev) => {
              return ev.joiner == accounts[1] && ev.habit_id == 0 &&
                 expect(ev.pledge_amt).to.eql(web3.utils.toBN(1e18)); 
         }, 'Join Habit event not emitted with correct params');
+        truffleAssert.eventEmitted(user_joins_2, 'JoinHabit', (ev) => {
+            return ev.joiner == accounts[2] && ev.habit_id == 0 &&
+               expect(ev.pledge_amt).to.eql(web3.utils.toBN(1e18)); 
+       }, 'Join Habit event not emitted with correct params');
     });
 
     it('User cannot join habit twice', async () => {
@@ -108,7 +119,7 @@ contract('Habit', function(accounts) {
         let pool = await habit_instance.get_pool(0);
         let is_user_joined_habit_zero = await habit_instance.is_user_joined_habit(0, accounts[1]);
 
-        expect(pool).to.eql(web3.utils.toBN(1e18)); 
+        expect(pool).to.eql(web3.utils.toBN(1e18 * 2)); 
 
         assert.strictEqual(
             is_user_joined_habit_zero,
@@ -140,40 +151,6 @@ contract('Habit', function(accounts) {
         )
 
     });
-    it('End habit fails when non contract owner calls it', async () => {
-        return truffleAssert.reverts(
-            habit_instance.end_habit(0, {from: accounts[1]}),
-            "Only owner of this contract can call this method"
-        );
-    });
-    
-    // it('Unable to call method before end time', async () => {
-    //     return truffleAssert.reverts(
-    //         habit_instance.end_habit(0, {from: accounts[0]}),
-    //         "Can only end this habit after end time"
-    //     );
-    // });
-
-    it('Returns money to winners', async () => {
-        // await web3.currentProvider.send({
-        //     jsonrpc: "2.0",
-        //     method: "evm_increaseTime",
-        //     params: [433e3],
-        //     id: 123
-        //     });
-        let end_habit = await habit_instance.end_habit(0, {from: accounts[0]});
-
-        assert.notStrictEqual(
-            end_habit,
-            undefined,
-            "Failed to end habit"
-        );
-
-        truffleAssert.eventEmitted(end_habit, 'EndHabit', (ev) => {
-            return ev.winner == accounts[1] && ev.habit_id == 0 &&
-                expect(ev.win_amt).to.eql(web3.utils.toBN(1e18)); 
-        }, 'End Habit event not emitted with correct params');
-    });
 
     /*
     user1 skips verifying on day 4
@@ -199,6 +176,37 @@ contract('Habit', function(accounts) {
             true,
             "users check_list not filled properly 2"
         )
+    });
+
+
+    it('End habit fails when non contract owner calls it', async () => {
+        return truffleAssert.reverts(
+            habit_instance.end_habit(0, {from: accounts[1]}),
+            "Only owner of this contract can call this method"
+        );
+    });
+    
+    it('Unable to call method before end time', async () => {
+        return truffleAssert.reverts(
+            habit_instance.end_habit(0, {from: accounts[0]}),
+            "Can only end this habit after end time"
+        );
+    });
+
+    it('Returns money to winners', async () => {
+        const new_block = await helper.advanceTimeAndBlock(FIVE_DAYS_IN_SECONDS + 100);
+        let end_habit = await habit_instance.end_habit(0, {from: accounts[0]});
+
+        assert.notStrictEqual(
+            end_habit,
+            undefined,
+            "Failed to end habit"
+        );
+
+        truffleAssert.eventEmitted(end_habit, 'EndHabit', (ev) => {
+            return ev.winner == accounts[2] && ev.habit_id == 0 &&
+                expect(ev.win_amt).to.eql(web3.utils.toBN(1e18 * 2)); 
+        }, 'End Habit event not emitted with correct params');
     });
     
 });
