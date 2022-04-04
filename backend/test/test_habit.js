@@ -193,7 +193,7 @@ contract('Habit', function(accounts) {
         );
     });
 
-    it('Returns money to winners', async () => {
+    it('Returns money to 1 winner', async () => {
         const new_block = await helper.advanceTimeAndBlock(FIVE_DAYS_IN_SECONDS + 100);
         let end_habit = await habit_instance.end_habit(0, {from: accounts[0]});
 
@@ -207,6 +207,157 @@ contract('Habit', function(accounts) {
             return ev.winner == accounts[2] && ev.habit_id == 0 &&
                 expect(ev.win_amt).to.eql(web3.utils.toBN(1e18 * 2)); 
         }, 'End Habit event not emitted with correct params');
+    });
+
+
+    it('Create 2 new habits with two users each', async () => {
+        const NEW_START_TIME = TEST_START_TIME + FIVE_DAYS_IN_SECONDS + 200;
+    
+        // Make habits for habits 1 and 2
+        let make_habit = await habit_instance.create_habit(NEW_START_TIME, {from: accounts[3]});
+        let make_habit_2 = await habit_instance.create_habit(NEW_START_TIME, {from: accounts[5]});
+
+        assert.notStrictEqual(
+            make_habit,
+            undefined,
+            "Failed to make habit"
+        );
+        assert.notStrictEqual(
+            make_habit_2,
+            undefined,
+            "Failed to make habit"
+        );
+
+        truffleAssert.eventEmitted(make_habit, 'CreateHabit', (ev) => {
+            return ev.owner == accounts[3] && ev.habit_id == 1 &&
+             ev.start_time == NEW_START_TIME
+        }, 'Create Habit event not emitted with correct params');
+        truffleAssert.eventEmitted(make_habit_2, 'CreateHabit', (ev) => {
+            return ev.owner == accounts[5] && ev.habit_id == 2 &&
+             ev.start_time == NEW_START_TIME
+        }, 'Create Habit event not emitted with correct params');
+
+        // User joins for habit 1
+        let user_joins = await habit_instance.join_habit(1, {from: accounts[3], value: web3.utils.toBN(1e18)});
+        let user_joins_2 = await habit_instance.join_habit(1, {from: accounts[4], value: web3.utils.toBN(1e18)});
+
+        assert.notStrictEqual(
+            user_joins,
+            undefined,
+            "User 1 failed to join habit"
+        );
+        assert.notStrictEqual(
+            user_joins_2,
+            undefined,
+            "User 2 failed to join habit"
+        );
+
+        truffleAssert.eventEmitted(user_joins, 'JoinHabit', (ev) => {
+             return ev.joiner == accounts[3] && ev.habit_id == 1 &&
+                expect(ev.pledge_amt).to.eql(web3.utils.toBN(1e18)); 
+        }, 'Join Habit event not emitted with correct params');
+        truffleAssert.eventEmitted(user_joins_2, 'JoinHabit', (ev) => {
+            return ev.joiner == accounts[4] && ev.habit_id == 1 &&
+               expect(ev.pledge_amt).to.eql(web3.utils.toBN(1e18)); 
+       }, 'Join Habit event not emitted with correct params');
+
+       // User joins for habit 2
+       let user_joins_3 = await habit_instance.join_habit(2, {from: accounts[5], value: web3.utils.toBN(1e18)});
+        let user_joins_4 = await habit_instance.join_habit(2, {from: accounts[6], value: web3.utils.toBN(1e18)});
+
+        assert.notStrictEqual(
+            user_joins_3,
+            undefined,
+            "User 1 failed to join habit"
+        );
+        assert.notStrictEqual(
+            user_joins_4,
+            undefined,
+            "User 2 failed to join habit"
+        );
+
+        truffleAssert.eventEmitted(user_joins_3, 'JoinHabit', (ev) => {
+             return ev.joiner == accounts[5] && ev.habit_id == 2 &&
+                expect(ev.pledge_amt).to.eql(web3.utils.toBN(1e18)); 
+        }, 'Join Habit event not emitted with correct params');
+        truffleAssert.eventEmitted(user_joins_4, 'JoinHabit', (ev) => {
+            return ev.joiner == accounts[6] && ev.habit_id == 2 &&
+               expect(ev.pledge_amt).to.eql(web3.utils.toBN(1e18)); 
+       }, 'Join Habit event not emitted with correct params');  
+    });
+
+    /*
+    user1 verifies on days 1 to 3 (0 to 2 index)
+    */
+    it("Losing user account 5 and 6", async () => {
+        let user1_day0_verified = await habit_instance.verify(2, accounts[5], 0);
+        let user1_day1_verified = await habit_instance.verify(2, accounts[5], 1);
+        let user1_day2_verified = await habit_instance.verify(2, accounts[5], 2);
+        let is_user1_loser1 = await habit_instance.is_user_a_loser(2, accounts[5]);
+        assert.strictEqual(
+            is_user1_loser1,
+            false,
+            "user1 check_list not filled properly"
+        );
+
+        let user1_day4_verified = await habit_instance.verify(2, accounts[5], 4);
+        let is_user1_loser2 = await habit_instance.is_user_a_loser(2, accounts[5]);
+        assert.strictEqual(
+            is_user1_loser2,
+            true,
+            "user1 check_list not filled properly 2"
+        );
+
+        let user2_day0_verified = await habit_instance.verify(2, accounts[6], 0);
+        let user2_day1_verified = await habit_instance.verify(2, accounts[6], 1);
+        let user2_day2_verified = await habit_instance.verify(2, accounts[6], 2);
+        let is_user2_loser1 = await habit_instance.is_user_a_loser(2, accounts[6]);
+        assert.strictEqual(
+            is_user2_loser1,
+            false,
+            "user2 check_list not filled properly"
+        );
+
+        let user2_day4_verified = await habit_instance.verify(2, accounts[6], 4);
+        let is_user2_loser2 = await habit_instance.is_user_a_loser(2, accounts[6]);
+        assert.strictEqual(
+            is_user2_loser2,
+            true,
+            "user2 check_list not filled properly 2"
+        );
+    });
+
+    it('Returns money to both winners', async () => {
+        const new_block = await helper.advanceTimeAndBlock(FIVE_DAYS_IN_SECONDS + 500);
+        let end_habit = await habit_instance.end_habit(1, {from: accounts[0]});
+
+        assert.notStrictEqual(
+            end_habit,
+            undefined,
+            "Failed to end habit"
+        );
+
+        truffleAssert.eventEmitted(end_habit, 'EndHabit', (ev) => {
+            return ev.winner == accounts[3] && ev.habit_id == 1 &&
+                expect(ev.win_amt).to.eql(web3.utils.toBN(1e18)); 
+        }, 'End Habit event not emitted with correct params');
+        truffleAssert.eventEmitted(end_habit, 'EndHabit', (ev) => {
+            return ev.winner == accounts[4] && ev.habit_id == 1 &&
+                expect(ev.win_amt).to.eql(web3.utils.toBN(1e18)); 
+        }, 'End Habit event not emitted with correct params');
+    });
+
+    it('Does not return money to anyone', async () => {
+        let end_habit = await habit_instance.end_habit(2, {from: accounts[0]});
+
+        assert.notStrictEqual(
+            end_habit,
+            undefined,
+            "Failed to end habit"
+        );
+
+        let balance = await web3.eth.getBalance(habit_instance.address);
+        expect(web3.utils.toBN(balance)).to.eql(web3.utils.toBN(1e18 * 2));
     });
     
 });
