@@ -128,7 +128,7 @@ contract Habit {
     */
     function end_habit(uint256 habit_id) public is_valid_id(habit_id) {
         require(msg.sender == con_owner, "Only owner of this contract can call this method");
-        // require(block.timestamp > habits[habit_id].end_time, "Can only end this habit after end time");
+        require(block.timestamp > habits[habit_id].end_time, "Can only end this habit after end time");
         address[] memory winners = new address[](habits[habit_id].num_users);
         uint256 num_winners = 0;
         uint256 loser_pool = habits[habit_id].pool;
