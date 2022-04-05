@@ -1,5 +1,4 @@
 pragma solidity ^0.5.0;
-import {BokkyPooBahsDateTimeLibrary} from "./datelib2.sol";
 
 contract Habit {
 
@@ -10,9 +9,6 @@ contract Habit {
         uint8[5] check_list;
     }
 
-    // user addr -> User struct & attributes
-    // Mapping users address -> user
-    
     struct habit {
         mapping(address => user) users;
         mapping(uint256 => address) user_addresses;
@@ -21,45 +17,60 @@ contract Habit {
         uint end_time;
         uint256 pool;
         uint256 num_users;
+        uint habit_type;
     }
+
+    /* ======= CONTRACT STATE ======= */
 
     address con_owner = msg.sender;
     uint256 public num_habits = 0;
     uint256 public main_pool = 0;
     mapping(uint256 => habit) public habits;
 
-    event CreateHabit(address owner, uint256 habit_id, uint start_time);
+    /* ======= EVENTS ======= */
+
+    event CreateHabit(address owner, uint256 habit_id, uint start_time, uint habit_type);
     event JoinHabit(address joiner, uint256 habit_id, uint256 pledge_amt);
     event EndHabit(address winner, uint256 habit_id, uint256 win_amt);
+
+    /* ======= MODIFIERS ======= */
 
     modifier is_valid_id(uint256 habit_id) {
         require(habit_id < num_habits, "Invalid habit id");
         _;
     }
 
+    modifier is_not_loser(uint256 habit_id, address user_addr) {
+        require(!habits[habit_id].users[user_addr].is_loser, "User has lost, no need to check on him.");
+        _;
+    }
+
     /**
     * @dev Creates and starts the challenge
     * @param start_time_ expects Unix timestamp in seconds
+    * @param habit_type_ expects Habit Types either 0 or 1
     *
     * Requirements:
     *
     * - `start_time_` must be in the future
     */
-    function create_habit(uint start_time_) public {
+    function create_habit(uint start_time_, uint habit_type_) public {
         require(block.timestamp < start_time_, "Start time must be in the future");
+        require(habit_type_ == 0 || habit_type_ == 1, "Habit type must be either id 0 or 1");
         habit memory new_habit = habit(
             {
                 owner: msg.sender,
                 start_time: start_time_,
                 end_time: start_time_ + 5 days,
                 pool: 0,
-                num_users: 0
+                num_users: 0,
+                habit_type: habit_type_
             }
         );
 
         uint256 new_habit_id = num_habits++;
         habits[new_habit_id] = new_habit;
-        emit CreateHabit(msg.sender, new_habit_id, start_time_);
+        emit CreateHabit(msg.sender, new_habit_id, start_time_, habit_type_);
     }
 
     /**
@@ -89,11 +100,6 @@ contract Habit {
         emit JoinHabit(msg.sender, habit_id, msg.value);
     }
 
-    modifier is_not_loser(uint256 habit_id, address user_addr) {
-        require(!habits[habit_id].users[user_addr].is_loser, "User has lost, no need to check on him.");
-        _;
-    }
-
     /**
     * @dev A more abstract verification function. Front end tells us who finished what habit and what day of the check_list they are on.
     * @param habit_id expects a valid habit id
@@ -101,7 +107,6 @@ contract Habit {
     * @param date_num expects the index to tick the check_list for the user. DATE NUM IS 0 INDEXED
     * 
     * @return bool where true if user is still a winner. else return false to say hes a loser.
-    * Requirements:
     */
     function verify(uint256 habit_id, address user_addr, uint date_num) public is_valid_id(habit_id)  is_not_loser(habit_id, user_addr)  returns (bool) {
         user storage curr_user = habits[habit_id].users[user_addr];
@@ -125,6 +130,7 @@ contract Habit {
     * Requirements:
     * - `habit_id` is a valid id
     * - `msg.sender` is owner of this contract
+    * - habit has expired
     */
     function end_habit(uint256 habit_id) public is_valid_id(habit_id) {
         require(msg.sender == con_owner, "Only owner of this contract can call this method");
@@ -152,31 +158,45 @@ contract Habit {
 
         delete habits[habit_id];
     }
+
+    /* Getters for Habit properties */
+
     function get_start_time(uint256 habit_id) public view is_valid_id(habit_id) returns (uint) {
         return habits[habit_id].start_time;
-    }
-
-    function get_start_time2(uint256 habit_id) public view is_valid_id(habit_id) returns (uint year, uint month, uint day){
-        return BokkyPooBahsDateTimeLibrary.timestampToDate(habits[habit_id].start_time);
     }
 
     function get_end_time(uint256 habit_id) public view is_valid_id(habit_id) returns (uint) {
         return habits[habit_id].end_time;
     }
 
-    function get_owner(uint256 habit_id) public view is_valid_id(habit_id) returns (address) {
-        return habits[habit_id].owner;
+    function get_habit_type(uint256 habit_id) public view is_valid_id(habit_id) returns (uint) {
+        return habits[habit_id].habit_type;
     }
 
-    function get_num_habits() public view returns (uint256) {
-        return num_habits;
+    function get_owner(uint256 habit_id) public view is_valid_id(habit_id) returns (address) {
+        return habits[habit_id].owner;
     }
 
     function get_pool(uint256 habit_id) public view is_valid_id(habit_id) returns (uint256) {
         return habits[habit_id].pool;
     }
 
-    /// Checks if user joined a habit
+    function get_num_users(uint256 habit_id) public view is_valid_id(habit_id) returns (uint256) {
+        return habits[habit_id].num_users;
+    }
+
+    /* Getters for main contract fields */
+
+    function get_num_habits() public view returns (uint256) {
+        return num_habits;
+    }
+
+    function get_con_owner() public view returns (address) {
+        return con_owner;
+    }
+
+    /* Helpers for unit tests */
+
     function is_user_joined_habit(uint256 habit_id, address user_) public view is_valid_id(habit_id) returns (bool) {
         return habits[habit_id].users[user_].addr != address(0);
     }
@@ -184,12 +204,8 @@ contract Habit {
     function is_user_a_loser(uint256 habit_id, address user_) public view is_valid_id(habit_id) returns (bool) {
         return habits[habit_id].users[user_].is_loser;
     }
-    // Returns owner of contract
-    function get_con_owner() public view returns (address) {
-        return con_owner;
-    }
 
-    function get_user_check_list(uint256 habit_id, address user_) public view is_valid_id(habit_id) returns (uint8[5]memory) {
+    function get_user_check_list(uint256 habit_id, address user_) public view is_valid_id(habit_id) returns (uint8[5] memory) {
         return habits[habit_id].users[user_].check_list;
     }
 
