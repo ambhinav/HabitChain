@@ -9,9 +9,6 @@ contract Habit {
         uint8[5] check_list;
     }
 
-    // user addr -> User struct & attributes
-    // Mapping users address -> user
-    
     struct habit {
         mapping(address => user) users;
         mapping(uint256 => address) user_addresses;
@@ -23,17 +20,28 @@ contract Habit {
         uint habit_type;
     }
 
+    /* ======= CONTRACT STATE ======= */
+
     address con_owner = msg.sender;
     uint256 public num_habits = 0;
     uint256 public main_pool = 0;
     mapping(uint256 => habit) public habits;
 
+    /* ======= EVENTS ======= */
+
     event CreateHabit(address owner, uint256 habit_id, uint start_time, uint habit_type);
     event JoinHabit(address joiner, uint256 habit_id, uint256 pledge_amt);
     event EndHabit(address winner, uint256 habit_id, uint256 win_amt);
 
+    /* ======= MODIFIERS ======= */
+
     modifier is_valid_id(uint256 habit_id) {
         require(habit_id < num_habits, "Invalid habit id");
+        _;
+    }
+
+    modifier is_not_loser(uint256 habit_id, address user_addr) {
+        require(!habits[habit_id].users[user_addr].is_loser, "User has lost, no need to check on him.");
         _;
     }
 
@@ -90,11 +98,6 @@ contract Habit {
         habits[habit_id].user_addresses[habits[habit_id].num_users] = msg.sender;
         habits[habit_id].num_users++;
         emit JoinHabit(msg.sender, habit_id, msg.value);
-    }
-
-    modifier is_not_loser(uint256 habit_id, address user_addr) {
-        require(!habits[habit_id].users[user_addr].is_loser, "User has lost, no need to check on him.");
-        _;
     }
 
     /**
