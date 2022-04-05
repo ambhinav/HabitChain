@@ -1,5 +1,4 @@
 pragma solidity ^0.5.0;
-import {BokkyPooBahsDateTimeLibrary} from "./datelib2.sol";
 
 contract Habit {
 
@@ -21,6 +20,7 @@ contract Habit {
         uint end_time;
         uint256 pool;
         uint256 num_users;
+        uint habit_type;
     }
 
     address con_owner = msg.sender;
@@ -28,7 +28,7 @@ contract Habit {
     uint256 public main_pool = 0;
     mapping(uint256 => habit) public habits;
 
-    event CreateHabit(address owner, uint256 habit_id, uint start_time);
+    event CreateHabit(address owner, uint256 habit_id, uint start_time, uint habit_type);
     event JoinHabit(address joiner, uint256 habit_id, uint256 pledge_amt);
     event EndHabit(address winner, uint256 habit_id, uint256 win_amt);
 
@@ -40,26 +40,29 @@ contract Habit {
     /**
     * @dev Creates and starts the challenge
     * @param start_time_ expects Unix timestamp in seconds
+    * @param habit_type_ expects Habit Types either 0 or 1
     *
     * Requirements:
     *
     * - `start_time_` must be in the future
     */
-    function create_habit(uint start_time_) public {
+    function create_habit(uint start_time_, uint habit_type_) public {
         require(block.timestamp < start_time_, "Start time must be in the future");
+        require(habit_type_ == 0 || habit_type_ == 1, "Habit type must be either id 0 or 1");
         habit memory new_habit = habit(
             {
                 owner: msg.sender,
                 start_time: start_time_,
                 end_time: start_time_ + 5 days,
                 pool: 0,
-                num_users: 0
+                num_users: 0,
+                habit_type: habit_type_
             }
         );
 
         uint256 new_habit_id = num_habits++;
         habits[new_habit_id] = new_habit;
-        emit CreateHabit(msg.sender, new_habit_id, start_time_);
+        emit CreateHabit(msg.sender, new_habit_id, start_time_, habit_type_);
     }
 
     /**
@@ -156,12 +159,12 @@ contract Habit {
         return habits[habit_id].start_time;
     }
 
-    function get_start_time2(uint256 habit_id) public view is_valid_id(habit_id) returns (uint year, uint month, uint day){
-        return BokkyPooBahsDateTimeLibrary.timestampToDate(habits[habit_id].start_time);
-    }
-
     function get_end_time(uint256 habit_id) public view is_valid_id(habit_id) returns (uint) {
         return habits[habit_id].end_time;
+    }
+
+    function get_habit_type(uint256 habit_id) public view is_valid_id(habit_id) returns (uint) {
+        return habits[habit_id].habit_type;
     }
 
     function get_owner(uint256 habit_id) public view is_valid_id(habit_id) returns (address) {

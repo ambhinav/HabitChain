@@ -17,7 +17,7 @@ contract('Habit', function(accounts) {
     const FIVE_DAYS_IN_SECONDS = 432e3;
 
     it('Create Habit', async () => {
-        let make_habit = await habit_instance.create_habit(TEST_START_TIME, {from: accounts[1]});
+        let make_habit = await habit_instance.create_habit(TEST_START_TIME, 0, {from: accounts[1]});
 
         assert.notStrictEqual(
             make_habit,
@@ -27,22 +27,22 @@ contract('Habit', function(accounts) {
 
         truffleAssert.eventEmitted(make_habit, 'CreateHabit', (ev) => {
             return ev.owner == accounts[1] && ev.habit_id == 0 &&
-             ev.start_time == TEST_START_TIME
+             ev.start_time == TEST_START_TIME && ev.habit_type == 0
         }, 'Create Habit event not emitted with correct params');
     });
 
     it('Cannot create habit if start time less than block.timestamp', async () => {
         return truffleAssert.reverts(
-            habit_instance.create_habit(TEST_START_TIME - 1e3, {from: accounts[1]}),
+            habit_instance.create_habit(TEST_START_TIME - 1e3, 0, {from: accounts[1]}),
             "Start time must be in the future"
         );
     });
 
     it('Verify habit fields', async () => {
         let _s_time = await habit_instance.get_start_time(0);
-        let obj1 = await habit_instance.get_start_time2(0);
         let _e_time = await habit_instance.get_end_time(0);
         let _owner = await habit_instance.get_owner(0);
+        let habit_type = await habit_instance.get_habit_type(0);
         let num_habits = await habit_instance.get_num_habits();
 
         // print type of obj1
@@ -73,6 +73,12 @@ contract('Habit', function(accounts) {
             _owner,
             accounts[1],
             "Owner not set properly"
+        );
+
+        assert.strictEqual(
+            habit_type.toNumber(),
+            0,
+            "Habit type not set properly"
         );
 
         assert.strictEqual(
@@ -214,8 +220,8 @@ contract('Habit', function(accounts) {
         const NEW_START_TIME = TEST_START_TIME + FIVE_DAYS_IN_SECONDS + 200;
     
         // Make habits for habits 1 and 2
-        let make_habit = await habit_instance.create_habit(NEW_START_TIME, {from: accounts[3]});
-        let make_habit_2 = await habit_instance.create_habit(NEW_START_TIME, {from: accounts[5]});
+        let make_habit = await habit_instance.create_habit(NEW_START_TIME, 0, {from: accounts[3]});
+        let make_habit_2 = await habit_instance.create_habit(NEW_START_TIME, 1, {from: accounts[5]});
 
         assert.notStrictEqual(
             make_habit,
@@ -230,11 +236,11 @@ contract('Habit', function(accounts) {
 
         truffleAssert.eventEmitted(make_habit, 'CreateHabit', (ev) => {
             return ev.owner == accounts[3] && ev.habit_id == 1 &&
-             ev.start_time == NEW_START_TIME
+             ev.start_time == NEW_START_TIME && ev.habit_type == 0
         }, 'Create Habit event not emitted with correct params');
         truffleAssert.eventEmitted(make_habit_2, 'CreateHabit', (ev) => {
             return ev.owner == accounts[5] && ev.habit_id == 2 &&
-             ev.start_time == NEW_START_TIME
+             ev.start_time == NEW_START_TIME && ev.habit_type == 1
         }, 'Create Habit event not emitted with correct params');
 
         // User joins for habit 1
