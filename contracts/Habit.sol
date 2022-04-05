@@ -104,7 +104,6 @@ contract Habit {
     * @param date_num expects the index to tick the check_list for the user. DATE NUM IS 0 INDEXED
     * 
     * @return bool where true if user is still a winner. else return false to say hes a loser.
-    * Requirements:
     */
     function verify(uint256 habit_id, address user_addr, uint date_num) public is_valid_id(habit_id)  is_not_loser(habit_id, user_addr)  returns (bool) {
         user storage curr_user = habits[habit_id].users[user_addr];
@@ -128,6 +127,7 @@ contract Habit {
     * Requirements:
     * - `habit_id` is a valid id
     * - `msg.sender` is owner of this contract
+    * - habit has expired
     */
     function end_habit(uint256 habit_id) public is_valid_id(habit_id) {
         require(msg.sender == con_owner, "Only owner of this contract can call this method");
@@ -155,6 +155,9 @@ contract Habit {
 
         delete habits[habit_id];
     }
+
+    /* Getters for Habit properties */
+
     function get_start_time(uint256 habit_id) public view is_valid_id(habit_id) returns (uint) {
         return habits[habit_id].start_time;
     }
@@ -171,15 +174,26 @@ contract Habit {
         return habits[habit_id].owner;
     }
 
-    function get_num_habits() public view returns (uint256) {
-        return num_habits;
-    }
-
     function get_pool(uint256 habit_id) public view is_valid_id(habit_id) returns (uint256) {
         return habits[habit_id].pool;
     }
 
-    /// Checks if user joined a habit
+    function get_num_users(uint256 habit_id) public view is_valid_id(habit_id) returns (uint256) {
+        return habits[habit_id].num_users;
+    }
+
+    /* Getters for main contract fields */
+
+    function get_num_habits() public view returns (uint256) {
+        return num_habits;
+    }
+
+    function get_con_owner() public view returns (address) {
+        return con_owner;
+    }
+
+    /* Helpers for unit tests */
+
     function is_user_joined_habit(uint256 habit_id, address user_) public view is_valid_id(habit_id) returns (bool) {
         return habits[habit_id].users[user_].addr != address(0);
     }
@@ -187,12 +201,8 @@ contract Habit {
     function is_user_a_loser(uint256 habit_id, address user_) public view is_valid_id(habit_id) returns (bool) {
         return habits[habit_id].users[user_].is_loser;
     }
-    // Returns owner of contract
-    function get_con_owner() public view returns (address) {
-        return con_owner;
-    }
 
-    function get_user_check_list(uint256 habit_id, address user_) public view is_valid_id(habit_id) returns (uint8[5]memory) {
+    function get_user_check_list(uint256 habit_id, address user_) public view is_valid_id(habit_id) returns (uint8[5] memory) {
         return habits[habit_id].users[user_].check_list;
     }
 
