@@ -9,18 +9,12 @@ import {
 } from "@mui/material";
 import React from "react";
 import SliderCaptcha from "@slider-captcha/react";
+import {useParams} from "react-router-dom";
 
 const VerifyCaptcha = () => {
   const [open, setOpen] = React.useState(false);
   const [token, setToken] = React.useState(null);
-
-  // const handleClickOpen = () => {
-  //   setOpen(true);
-  // };
-
-  // const handleClose = () => {
-  //   setOpen(false);
-  // };
+  const habitId = useParams().habitId;
 
   function verifiedCallback(token) {
     console.log("Captcha token: " + token);

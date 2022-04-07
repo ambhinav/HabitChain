@@ -1,37 +1,61 @@
 import { Card, CardContent, Button } from "@mui/material";
 import React from "react";
 import { useNavigate } from "react-router-dom";
-
+import Image from "../img/habit.jpg";
 
 const Home = () => {
-    const history = useNavigate();
+  const history = useNavigate();
 
-    const handleCreateHabitButton = () => {
-        history("/createHabit")
-    }
+  const handleViewMyHabitsButton = () => {
+      history("/myHabits");
+  }
 
-    const handleJoinHabitButton = () => {
-        history("/joinHabit")
-    }
+  const handleCreateHabitButton = () => {
+    history("/createHabit");
+  };
 
-    const handleConnectToStrava = () => {
-        history("/connectTracker")
-    };
-    return (
-        <div>
-            <Card sx={{minWidth: 500, padding: 10, margin: 10, textAlign: "center"}}>
-                <CardContent>
-                    <Button variant="contained" sx={{margin: "10px"}} onClick={handleCreateHabitButton}>Create a New Habit</Button>
-                    <br/>
-                    <Button variant="contained" sx={{margin: "10px"}}>Join a Habit Challenge</Button>
-                    <br/>
-                    <Button variant="contained" sx={{margin: "10px"}}>View ongoing Habits</Button>
-                    <br/>
-                    <Button variant="contained" sx={{margin: "10px"}} onClick={handleConnectToStrava}>Connect to Strava</Button>
-                </CardContent>
-            </Card>
-        </div>
-    )
-}
+  const handleJoinHabitButton = () => {
+    history("/joinHabit");
+  };
+
+  const handleConnectToStrava = () => {
+    history("/connectStrava");
+  };
+
+  return (
+    <div>
+      <Card
+        sx={{ minWidth: 500, minHeight: 260, padding: 10, margin: 10, textAlign: "center", backgroundImage:  `url(${Image})`}}
+      >
+        <CardContent>
+          <Button
+            variant="contained"
+            sx={{ margin: "10px" }}
+            onClick={handleViewMyHabitsButton}
+          >
+            View My Current Habits
+          </Button>
+          <br />
+          <Button
+            variant="contained"
+            sx={{ margin: "10px" }}
+            onClick={handleCreateHabitButton}
+          >
+            Create a New Habit
+          </Button>
+          <br />
+          <Button
+            variant="contained"
+            sx={{ margin: "10px" }}
+            onClick={handleJoinHabitButton}
+          >
+            View All Ongoing Habits
+          </Button>
+          <br />
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
 
 export default Home;

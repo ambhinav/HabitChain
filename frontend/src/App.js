@@ -1,20 +1,23 @@
 import React, { Component, useState } from "react";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Route, Routes, useNavigate } from "react-router-dom";
 import Home from "./components/Home";
-import UploadActivity from "./components/UploadActivity";
 import ConnectStrava from "./components/ConnectStrava";
 import VerifyCaptcha from "./components/VerifyCaptcha";
-import CreateHabit from "./components/JoinHabit";
+import JoinHabit from "./components/JoinHabit";
+import CreateHabit from "./components/CreateHabit";
 import {
   AppBar,
   Box,
   Button,
   CircularProgress,
+  IconButton,
   Toolbar,
   Typography,
 } from "@mui/material";
 import { makeStyles } from "@mui/styles";
 import Token from "./components/Token";
+import MyHabits from "./components/MyHabits";
+import HomeIcon from '@mui/icons-material/Home';
 
 const useStyles = makeStyles(() => {
   return {
@@ -33,47 +36,12 @@ function App() {
   const [web3, setWeb3] = useState(null);
   const [accounts, setAccounts] = useState(null);
   const [contract, setContract] = useState(null);
+  const history = useNavigate();
 
-  // componentDidMount = async () => {
-  //   try {
-  //     // Get network provider and web3 instance.
-  //     const web3 = await getWeb3();
-  //     // Use web3 to get the user's accounts.
-  //     const accounts = await web3.eth.getAccounts();
-  //     // Get the contract instance.
-  //     const networkId = await web3.eth.net.getId();
-  //     const deployedNetwork = SimpleStorageContract.networks[networkId];
-  //     const instance = new web3.eth.Contract(
-  //       SimpleStorageContract.abi,
-  //       deployedNetwork && deployedNetwork.address
-  //     );
-  //     // Set web3, accounts, and contract to the state, and then proceed with an
-  //     // example of interacting with the contract's methods.
-  //     this.setState({ web3, accounts, contract: instance }, this.runExample);
-  //   } catch (error) {
-  //     // Catch any errors for any of the above operations.
-  //     alert(
-  //       `Failed to load web3, accounts, or contract. Check console for details.`
-  //     );
-  //     console.error(error);
-  //   }
-  // };
+  const home = () => {
+    history("/")
+  }
 
-
-  // if (!web3) {
-  //   return (
-  //     <div>
-  //       <AppBar position="static">
-  //         <Toolbar>
-  //           <Typography variant="h1">HabitChain</Typography>
-  //         </Toolbar>
-  //       </AppBar>
-  //       <div className={classes.home}>
-  //         <CircularProgress />
-  //       </div>
-  //     </div>
-  //   );
-  // } else {
   return (
     <div className="App">
       <Box sx={{ flexGrow: 1 }}>
@@ -83,18 +51,20 @@ function App() {
               HabitChain
             </Typography>
             <Button color="inherit">Login</Button>
+            <IconButton onClick={home}>
+                <HomeIcon/>
+            </IconButton>
           </Toolbar>
         </AppBar>
-        <BrowserRouter>
           <Routes>
             <Route path="/" exact element={<Home />} />
-            <Route path="/fitnessTracker" exact element={<UploadActivity />} />
-            <Route path="/connectTracker" exact element={<ConnectStrava />} />
+            <Route path="/connectStrava/:habitId" exact element={<ConnectStrava />} />
             <Route path="/token" exact element={<Token />} />
-            <Route path="/riseAndShine" exact element={<VerifyCaptcha />} />
+            <Route path="/riseAndShine/:habitId" exact element={<VerifyCaptcha />} />
             <Route path="/createHabit" exact element={<CreateHabit />} />
+            <Route path="/joinHabit" exact element={<JoinHabit />} />
+            <Route path="/myHabits" exact element={<MyHabits />} />
           </Routes>
-        </BrowserRouter>
       </Box>
     </div>
   );
