@@ -140,46 +140,34 @@ contract('Habit', function(accounts) {
     });
 
     /*
-    user1 verifies on days 1 to 3 (0 to 2 index)
+    user1 will tick his checklist for all 5 days (0 indexed)
     */
     it("Verifying consistently up to day offset results in a winner", async () => {
-        let user1_day0_verified = await habit_instance.verify(0, accounts[1], 0);
-        let user1_day1_verified = await habit_instance.verify(0, accounts[1], 1);
-        let user1_day2_verified = await habit_instance.verify(0, accounts[1], 2);
-        let is_user1_loser1 = await habit_instance.is_user_a_loser(0, accounts[1]);
-        assert.strictEqual(
-            is_user1_loser1,
-            false,
-            "users check_list not filled properly"
-        )
+        let user1_day0_verified = await habit_instance.tick_user_list(0, accounts[1], 0);
+        let user1_day1_verified = await habit_instance.tick_user_list(0, accounts[1], 1);
+        let user1_day2_verified = await habit_instance.tick_user_list(0, accounts[1], 2);
+        let user1_day3_verified = await habit_instance.tick_user_list(0, accounts[1], 3);
+        let user1_day4_verified = await habit_instance.tick_user_list(0, accounts[1], 4);
 
-    });
-
-    /*
-    user1 skips verifying on day 4
-    user1 verifies on day 5. user1 should be labelled as a loser.
-    */
-    it("Skipping a day and then verify results in a loser", async () => {
-
-        let user1_day4_verified = await habit_instance.verify(0, accounts[1], 4);
         // console.log(user1_day4_verified);
         /* check user1 array after 5 days and skipping day 4
-        let is_user1_array2 = await habit_instance.get_user_check_list.call(0, accounts[1]);
-        // loop through array of big numbers
-        for (let i = 0; i < is_user1_array2.length; i++) {
-            console.log(is_user1_array2[i].toNumber());
-        }
         */
+        let is_user1_array = await habit_instance.get_user_check_list.call(0, accounts[1]);
+        // loop through array of big numbers
+        console.log('user 1 checklist')
+        for (let i = 0; i < is_user1_array.length; i++) {
+            console.log(is_user1_array[i].toNumber());
+        }
 
-        // console.log(is_user1_array2);
-        let is_user1_loser2 = await habit_instance.is_user_a_loser(0, accounts[1]);
-        assert.strictEqual(
-            is_user1_loser2,
-            true,
-            "users check_list not filled properly 2"
-        )
+        // only tick day2 for user 2
+        let user2_day2_verified = await habit_instance.tick_user_list(0, accounts[2], 2);
+
+        let is_user2_array = await habit_instance.get_user_check_list.call(0, accounts[2]);
+        console.log('user 2 checklist')
+        for (let i = 0; i < is_user2_array.length; i++) {
+            console.log(is_user2_array[i].toNumber());
+        }
     });
-
 
     it('End habit fails when non contract owner calls it', async () => {
         return truffleAssert.reverts(
@@ -206,7 +194,7 @@ contract('Habit', function(accounts) {
         );
 
         truffleAssert.eventEmitted(end_habit, 'EndHabit', (ev) => {
-            return ev.winner == accounts[2] && ev.habit_id == 0 &&
+            return ev.winner == accounts[1] && ev.habit_id == 0 &&
                 expect(ev.win_amt).to.eql(web3.utils.toBN(1e18 * 2)); 
         }, 'End Habit event not emitted with correct params');
     });
@@ -291,47 +279,23 @@ contract('Habit', function(accounts) {
     /*
     user1 verifies on days 1 to 3 (0 to 2 index)
     */
-    it("Losing user account 5 and 6", async () => {
-        let user1_day0_verified = await habit_instance.verify(2, accounts[5], 0);
-        let user1_day1_verified = await habit_instance.verify(2, accounts[5], 1);
-        let user1_day2_verified = await habit_instance.verify(2, accounts[5], 2);
-        let is_user1_loser1 = await habit_instance.is_user_a_loser(2, accounts[5]);
-        assert.strictEqual(
-            is_user1_loser1,
-            false,
-            "user1 check_list not filled properly"
-        );
+    it("Winning: user account 5 and 6", async () => {
+        let user1_day0_verified = await habit_instance.tick_user_list(2, accounts[5], 0);
+        let user1_day1_verified = await habit_instance.tick_user_list(2, accounts[5], 1);
+        let user1_day2_verified = await habit_instance.tick_user_list(2, accounts[5], 2);
+        let user1_day3_verified = await habit_instance.tick_user_list(2, accounts[5], 3);
+        let user1_day4_verified = await habit_instance.tick_user_list(2, accounts[5], 4);
 
-        let user1_day4_verified = await habit_instance.verify(2, accounts[5], 4);
-        let is_user1_loser2 = await habit_instance.is_user_a_loser(2, accounts[5]);
-        assert.strictEqual(
-            is_user1_loser2,
-            true,
-            "user1 check_list not filled properly 2"
-        );
-
-        let user2_day0_verified = await habit_instance.verify(2, accounts[6], 0);
-        let user2_day1_verified = await habit_instance.verify(2, accounts[6], 1);
-        let user2_day2_verified = await habit_instance.verify(2, accounts[6], 2);
-        let is_user2_loser1 = await habit_instance.is_user_a_loser(2, accounts[6]);
-        assert.strictEqual(
-            is_user2_loser1,
-            false,
-            "user2 check_list not filled properly"
-        );
-
-        let user2_day4_verified = await habit_instance.verify(2, accounts[6], 4);
-        let is_user2_loser2 = await habit_instance.is_user_a_loser(2, accounts[6]);
-        assert.strictEqual(
-            is_user2_loser2,
-            true,
-            "user2 check_list not filled properly 2"
-        );
+        let user2_day0_verified = await habit_instance.tick_user_list(2, accounts[6], 0);
+        let user2_day1_verified = await habit_instance.tick_user_list(2, accounts[6], 1);
+        let user2_day2_verified = await habit_instance.tick_user_list(2, accounts[6], 2);
+        let user2_day3_verified = await habit_instance.tick_user_list(2, accounts[6], 3);
+        let user2_day4_verified = await habit_instance.tick_user_list(2, accounts[6], 4);
     });
 
     it('Returns money to both winners', async () => {
         const new_block = await helper.advanceTimeAndBlock(FIVE_DAYS_IN_SECONDS + 500);
-        let end_habit = await habit_instance.end_habit(1, {from: accounts[0]});
+        let end_habit = await habit_instance.end_habit(2, {from: accounts[0]});
 
         assert.notStrictEqual(
             end_habit,
@@ -340,17 +304,17 @@ contract('Habit', function(accounts) {
         );
 
         truffleAssert.eventEmitted(end_habit, 'EndHabit', (ev) => {
-            return ev.winner == accounts[3] && ev.habit_id == 1 &&
+            return ev.winner == accounts[5] && ev.habit_id == 2 &&
                 expect(ev.win_amt).to.eql(web3.utils.toBN(1e18)); 
         }, 'End Habit event not emitted with correct params');
         truffleAssert.eventEmitted(end_habit, 'EndHabit', (ev) => {
-            return ev.winner == accounts[4] && ev.habit_id == 1 &&
+            return ev.winner == accounts[6] && ev.habit_id == 2 &&
                 expect(ev.win_amt).to.eql(web3.utils.toBN(1e18)); 
         }, 'End Habit event not emitted with correct params');
     });
 
     it('Does not return money to anyone', async () => {
-        let end_habit = await habit_instance.end_habit(2, {from: accounts[0]});
+        let end_habit = await habit_instance.end_habit(1, {from: accounts[0]});
 
         assert.notStrictEqual(
             end_habit,
@@ -361,5 +325,6 @@ contract('Habit', function(accounts) {
         let balance = await web3.eth.getBalance(habit_instance.address);
         expect(web3.utils.toBN(balance)).to.eql(web3.utils.toBN(1e18 * 2));
     });
+
     
 });
