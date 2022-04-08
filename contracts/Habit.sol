@@ -25,7 +25,6 @@ contract Habit {
     address con_owner = msg.sender;
     uint256 public num_habits = 0;
     uint256 public main_pool = 0;
-    uint256 public all_losers_pool = 0;
     mapping(uint256 => habit) public habits;
 
     /* ======= EVENTS ======= */
@@ -34,6 +33,7 @@ contract Habit {
     event JoinHabit(address joiner, uint256 habit_id, uint256 pledge_amt);
     event EndHabit(address winner, uint256 habit_id, uint256 win_amt);
     event TickUserList(uint256 habit_id, address user_addr, uint date_num);
+    event AllLose(uint256 habit_id, uint256 lose_amt);
 
     /* ======= MODIFIERS ======= */
 
@@ -129,7 +129,7 @@ contract Habit {
     * - `habit_id` is a valid id
     * - `msg.sender` is owner of this contract
     * - habit has expired
-    * @return 0: no winner (pool moved to all_losers_pool), 1: at least 1 winner
+    * @return 0: no winner (pool moved to main_pool), 1: at least 1 winner
     */
     function end_habit(uint256 habit_id) public is_valid_id(habit_id) only_owner(msg.sender) returns (uint) {
         require(block.timestamp > habits[habit_id].end_time, "Can only end this habit after end time");
@@ -152,9 +152,10 @@ contract Habit {
             }
         }
         uint256 winner_pool = habits[habit_id].pool - loser_pool;
-        // if there are no winners, transfer to all_losers_pool. 0 case
+        // if there are no winners, transfer to main_pool. 0 case
         if (num_winners == 0) {
-            all_losers_pool = loser_pool;
+            main_pool += loser_pool;
+            emit AllLose(habit_id, main_pool);
             return 0;
         }
         for (uint j = 0; j < num_winners; j++) {
@@ -165,15 +166,17 @@ contract Habit {
             emit EndHabit(recipient, habit_id, to_receive);
         }
 
-        delete habits[habit_id];
+        // delete habits[habit_id];
         return 1;
     }
 
     /* Contract owner can withdraw money in the case where everyone loses in the challenge
     */
-    function withdraw() public only_owner(msg.sender) {
+    function withdraw(uint256 amt) public only_owner(msg.sender) {
+        require(amt <= main_pool, "Amount is too big to withdraw.");
         address payable payable_owner = address(uint160(con_owner));
-        payable_owner.transfer(all_losers_pool);
+        payable_owner.transfer(amt);
+        main_pool -= amt;
     }
 
     /* Setters for Habit properties */
@@ -233,8 +236,8 @@ contract Habit {
         return con_owner;
     }
 
-    function get_all_losers_pool() public view returns (uint256) {
-        return all_losers_pool;
+    function get_main_pool() public view returns (uint256) {
+        return main_pool;
     }
 
     /* Helpers for unit tests */

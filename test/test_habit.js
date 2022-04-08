@@ -94,6 +94,7 @@ contract('Habit', function(accounts) {
 
     });
 
+    // user 1 joins with 1e18, user 2 with 1e18 habit 0
     it('User can join habit', async () => {
         let user_joins = await habit_instance.join_habit(0, {from: accounts[1], value: web3.utils.toBN(1e18)});
         let user_joins_2 = await habit_instance.join_habit(0, {from: accounts[2], value: web3.utils.toBN(1e18)});
@@ -126,6 +127,10 @@ contract('Habit', function(accounts) {
         );
     });
 
+    /*
+    Check the pool of habit 0
+    check if user 0 joined habit 0 (he did not)
+    */
     it('Verify habit fields after user joins', async () => {
         let pool = await habit_instance.get_pool(0);
         let is_user_joined_habit_zero = await habit_instance.is_user_joined_habit(0, accounts[1]);
@@ -141,6 +146,7 @@ contract('Habit', function(accounts) {
 
     /*
     user1 will tick his checklist for all 5 days (0 indexed)
+    user2 will only tick checklist on day 2
     */
     it("Account 1 checks off all days, Account 2 checks off only 1 day", async () => {
         let user1_day0_verified = await habit_instance.tick_user_list(0, accounts[1], 0);
@@ -195,6 +201,9 @@ contract('Habit', function(accounts) {
         );
     });
 
+    /*
+    user1 will win habit 0. Will get 2 eth. total in wallet should be ~101 eth
+    */
     it('Returns money to 1 winner', async () => {
         const new_block = await helper.advanceTimeAndBlock(FIVE_DAYS_IN_SECONDS + 100);
         let end_habit = await habit_instance.end_habit(0, {from: accounts[0]});
@@ -212,6 +221,13 @@ contract('Habit', function(accounts) {
     });
 
 
+    /*
+    habit 1 created by user3
+    joined by user3 (1 eth) and user4 (1 eth)
+
+    habit 2 created by user5
+    joined by user5 (1 eth) and user6 (1 eth)
+    */
     it('Create 2 new habits with two users each', async () => {
         const NEW_START_TIME = TEST_START_TIME + FIVE_DAYS_IN_SECONDS + 200;
     
@@ -288,9 +304,6 @@ contract('Habit', function(accounts) {
        }, 'Join Habit event not emitted with correct params');  
     });
 
-    /*
-    user1 verifies on days 1 to 3 (0 to 2 index)
-    */
     it("Accounts 5 and 6 check off all their days", async () => {
         let user5_day0_verified = await habit_instance.tick_user_list(2, accounts[5], 0);
         let user5_day1_verified = await habit_instance.tick_user_list(2, accounts[5], 1);
@@ -318,6 +331,9 @@ contract('Habit', function(accounts) {
         }, 'Ticking of user6 checklist at Day 4 is not correct');
     });
 
+    /*
+    habit 2: user5 and user6 check off all their days so both should get their amt back (~100 eth in wallets)
+    */
     it('Returns money to both winners', async () => {
         const new_block = await helper.advanceTimeAndBlock(FIVE_DAYS_IN_SECONDS + 500);
         let end_habit = await habit_instance.end_habit(2, {from: accounts[0]});
@@ -338,8 +354,17 @@ contract('Habit', function(accounts) {
         }, 'End Habit event not emitted with correct params');
     });
 
+    /*
+    habit 1: user3 and user4 both did not finish.
+    Main pool will keep their money (2 eth)
+    */
     it('Does not return money to anyone', async () => {
         let end_habit = await habit_instance.end_habit(1, {from: accounts[0]});
+
+        truffleAssert.eventEmitted(end_habit, 'AllLose', (ev) => {
+            // emit AllLose(habit_id, loser_pool);
+            return ev.habit_id == 1 && expect(ev.lose_amt).to.eql(web3.utils.toBN(1e18 * 2)); 
+        }, 'All Lose event not emitted with correct params');
 
         assert.notStrictEqual(
             end_habit,
@@ -351,16 +376,35 @@ contract('Habit', function(accounts) {
         expect(web3.utils.toBN(balance)).to.eql(web3.utils.toBN(1e18 * 2));
     });
 
-    /*
-    it("Contract owner collects all_losers_pool", async () => {
-        let all_losers_pool = await habit_instance.get_all_losers_pool();
-        console.log('***** all losers pool *****');
-        console.log(all_losers_pool.toNumber());
-        // let pool = await habit_instance.get_pool(0);
-
-        // expect(pool).to.eql(web3.utils.toBN(1e18 * 2)); 
+    it('Withdraw() fails when non contract owner calls it', async () => {
+        return truffleAssert.reverts(
+            habit_instance.withdraw(web3.utils.toBN(1e18), {from: accounts[1]}),
+            "Only owner of this contract can call this method"
+        );
     });
-    */
 
+    it("Contract owner withdraws 1 eth from main_pool of 2 eth to get a remainder of 1 eth in the main pool", async () => {
+        let main_pool = await habit_instance.get_main_pool();
+        // console.log(main_pool.toString());
+        // let pool = await habit_instance.get_pool(0);
+        expect(main_pool).to.eql(web3.utils.toBN(1e18 * 2)); 
+
+        let owner_withdraws_1eth = await habit_instance.withdraw(web3.utils.toBN(1e18), {from: accounts[0]})
+        let main_pool2 = await habit_instance.get_main_pool();
+        // console.log(main_pool2.toString());
+        expect(main_pool2).to.eql(web3.utils.toBN(1e18)); 
+    });
+
+    it("Cannot withdraw more than main_pool available", async () => {
+        let owner_withdraws_1eth = await habit_instance.withdraw(web3.utils.toBN(1e18), {from: accounts[0]})
+        let main_pool2 = await habit_instance.get_main_pool();
+        console.log(main_pool2.toString());
+        expect(main_pool2).to.eql(web3.utils.toBN(0)); 
+
+        await truffleAssert.reverts(
+            habit_instance.withdraw(web3.utils.toBN(1e18), {from: accounts[0]}),
+            "Amount is too big to withdraw."
+        );
+    });
     
 });
