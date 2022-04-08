@@ -33,6 +33,7 @@ contract Habit {
     event CreateHabit(address owner, uint256 habit_id, uint start_time, uint habit_type);
     event JoinHabit(address joiner, uint256 habit_id, uint256 pledge_amt);
     event EndHabit(address winner, uint256 habit_id, uint256 win_amt);
+    event TickUserList(uint256 habit_id, address user_addr, uint date_num);
 
     /* ======= MODIFIERS ======= */
 
@@ -112,13 +113,12 @@ contract Habit {
     * @param user_addr expects a valid user address
     * @param date_num expects the index to tick the check_list for the user. DATE NUM IS 0 INDEXED
     * 
-    * @return true when ticked
     */
-    function tick_user_list(uint256 habit_id, address user_addr, uint date_num) public is_valid_id(habit_id) returns (bool) {
+    function tick_user_list(uint256 habit_id, address user_addr, uint date_num) public is_valid_id(habit_id) {
         user storage curr_user = habits[habit_id].users[user_addr];
 
         curr_user.check_list[date_num] = 1;
-        return true;
+        emit TickUserList(habit_id, user_addr, date_num);
     }
 
     /**
