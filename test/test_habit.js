@@ -5,6 +5,11 @@ const { verify } = require("crypto");
 const helper = require('./truffleTestHelper');
 
 var Habit = artifacts.require("../contracts/Habit.sol");
+/*
+Every test needs you to restart the ganache instance. This is because the tests create a habit in the array of habits.
+
+So when you try and rerun the test, the creating of habits does not start at 0. 
+*/
 
 contract('Habit', function(accounts) {
 
@@ -141,15 +146,7 @@ contract('Habit', function(accounts) {
         let user1_day0_verified = await habit_instance.verify(0, accounts[1], 0);
         let user1_day1_verified = await habit_instance.verify(0, accounts[1], 1);
         let user1_day2_verified = await habit_instance.verify(0, accounts[1], 2);
-        // console.log(user1_day0_verified, user1_day1_verified, user1_day2_verified)
         let is_user1_loser1 = await habit_instance.is_user_a_loser(0, accounts[1]);
-        /* check user1 array after 3 days
-        let is_user1_array1 = await habit_instance.get_user_check_list.call(0, accounts[1]);
-        // loop through array of big numbers
-        for (let i = 0; i < is_user1_array1.length; i++) {
-            console.log(is_user1_array1[i].toNumber());
-        }
-        */
         assert.strictEqual(
             is_user1_loser1,
             false,
@@ -166,7 +163,6 @@ contract('Habit', function(accounts) {
 
         let user1_day4_verified = await habit_instance.verify(0, accounts[1], 4);
         // console.log(user1_day4_verified);
-        // let is_user1_array2 = await habit_instance.get_user_check_list(0, accounts[1]);
         /* check user1 array after 5 days and skipping day 4
         let is_user1_array2 = await habit_instance.get_user_check_list.call(0, accounts[1]);
         // loop through array of big numbers
