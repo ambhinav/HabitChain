@@ -18,6 +18,8 @@ contract Habit {
         uint256 pool;
         uint256 num_users;
         uint habit_type;
+        uint wake_up_time; //set to 8AM
+        uint run_distance; //set to 5KM
     }
 
     /* ======= CONTRACT STATE ======= */
@@ -64,7 +66,9 @@ contract Habit {
                 end_time: start_time_ + 5 days,
                 pool: 0,
                 num_users: 0,
-                habit_type: habit_type_
+                habit_type: habit_type_,
+                wake_up_time: 8*60, //minutes from 00:00 midnight
+                run_distance: 5000 //meters
             }
         );
 
@@ -193,6 +197,14 @@ contract Habit {
 
     function get_con_owner() public view returns (address) {
         return con_owner;
+    }
+
+    function get_run_distance(uint256 habit_id) public view is_valid_id(habit_id) returns (uint256) {
+        return habits[habit_id].run_distance;
+    }
+
+    function get_wake_up_time(uint256 habit_id) public view is_valid_id(habit_id) returns (uint256) {
+        return habits[habit_id].wake_up_time;
     }
 
     /* Helpers for unit tests */

@@ -50,7 +50,6 @@ function App() {
             <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
               HabitChain
             </Typography>
-            <Button color="inherit">Login</Button>
             <IconButton onClick={home}>
                 <HomeIcon/>
             </IconButton>
