@@ -18,6 +18,7 @@ contract Habit {
         uint256 pool;
         uint256 num_users;
         uint habit_type;
+        bool is_deleted;
     }
 
     /* ======= CONTRACT STATE ======= */
@@ -52,6 +53,10 @@ contract Habit {
         _;
     }
 
+    modifier is_not_deleted(uint256 habit_id) {
+        require(!habits[habit_id].is_deleted, "Habit has been deleted");
+        _;
+    }
     /**
     * @dev Creates and starts the challenge
     * @param start_time_ expects Unix timestamp in seconds
@@ -71,7 +76,8 @@ contract Habit {
                 end_time: start_time_ + 5 days,
                 pool: 0,
                 num_users: 0,
-                habit_type: habit_type_
+                habit_type: habit_type_,
+                is_deleted: false
             }
         );
 
@@ -88,7 +94,7 @@ contract Habit {
     * - `habit_id` is a valid id
     * - `msg.sender` is not part of challenge already
     */
-    function join_habit(uint256 habit_id) public payable is_valid_id(habit_id) {
+    function join_habit(uint256 habit_id) public payable is_valid_id(habit_id) is_not_deleted(habit_id) {
         require(msg.value > 0, "Pledge amount must be more than 0");
         require(habits[habit_id].users[msg.sender].addr == address(0), "User has already joined habit");
         user memory user_ = user(
@@ -114,7 +120,7 @@ contract Habit {
     * @param date_num expects the index to tick the check_list for the user. DATE NUM IS 0 INDEXED
     * 
     */
-    function tick_user_list(uint256 habit_id, address user_addr, uint date_num) public is_valid_id(habit_id) {
+    function tick_user_list(uint256 habit_id, address user_addr, uint date_num) public is_valid_id(habit_id) is_not_deleted(habit_id) {
         user storage curr_user = habits[habit_id].users[user_addr];
 
         curr_user.check_list[date_num] = 1;
@@ -131,7 +137,7 @@ contract Habit {
     * - habit has expired
     * @return 0: no winner (pool moved to main_pool), 1: at least 1 winner
     */
-    function end_habit(uint256 habit_id) public is_valid_id(habit_id) only_owner(msg.sender) returns (uint) {
+    function end_habit(uint256 habit_id) public is_valid_id(habit_id) is_not_deleted(habit_id) only_owner(msg.sender) returns (uint) {
         require(block.timestamp > habits[habit_id].end_time, "Can only end this habit after end time");
         // setup arr of winners and keep track of the number of winners
         address[] memory winners = new address[](habits[habit_id].num_users);
@@ -152,6 +158,7 @@ contract Habit {
             }
         }
         uint256 winner_pool = habits[habit_id].pool - loser_pool;
+        habits[habit_id].is_deleted = true;
         // if there are no winners, transfer to main_pool. 0 case
         if (num_winners == 0) {
             main_pool += loser_pool;
@@ -166,7 +173,6 @@ contract Habit {
             emit EndHabit(recipient, habit_id, to_receive);
         }
 
-        // delete habits[habit_id];
         return 1;
     }
 
@@ -187,7 +193,7 @@ contract Habit {
     * 
     * @return bool where true if user is still a winner. else return false to say hes a loser.
     */
-    function verify(uint256 habit_id, address user_addr) private is_valid_id(habit_id) returns (bool) {
+    function verify(uint256 habit_id, address user_addr) private is_valid_id(habit_id) is_not_deleted(habit_id) returns (bool) {
         user storage curr_user = habits[habit_id].users[user_addr];
         // if any of these days have not been filled, user becomes a loser.
         for (uint i=0; i<curr_user.check_list.length; i++) {
@@ -253,6 +259,10 @@ contract Habit {
 
     function get_user_check_list(uint256 habit_id, address user_) public view is_valid_id(habit_id) returns (uint8[5] memory) {
         return habits[habit_id].users[user_].check_list;
+    }
+
+    function is_habit_deleted(uint256 habit_id) public view is_valid_id(habit_id) returns (bool) {
+        return habits[habit_id].is_deleted;
     }
 
 }
