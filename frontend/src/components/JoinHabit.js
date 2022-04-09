@@ -30,7 +30,7 @@ const CreateHabit = () => {
       console.log("Habit contract initialised", habit);
       // create habit id 0 with start time a day from now
       const startTime = Math.floor(moment().add(1, 'day').valueOf() / 1e3);
-      await habit.methods.create_habit(startTime).send({from: accounts[0]});
+      await habit.methods.create_habit(startTime, 0).send({from: accounts[0]});
       const numHabits = await habit.methods.get_num_habits().call()
       alert(`Challenge ${numHabits} created -> id is ${numHabits - 1}`);
     } catch (err) {
