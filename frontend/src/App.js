@@ -18,6 +18,8 @@ import { makeStyles } from "@mui/styles";
 import Token from "./components/Token";
 import MyHabits from "./components/MyHabits";
 import HomeIcon from '@mui/icons-material/Home';
+import CaptchaToken from "./components/CaptchaToken";
+import RunToken from "./components/RunToken";
 
 const useStyles = makeStyles(() => {
   return {
@@ -63,6 +65,8 @@ function App() {
             <Route path="/createHabit" exact element={<CreateHabit />} />
             <Route path="/joinHabit" exact element={<JoinHabit />} />
             <Route path="/myHabits" exact element={<MyHabits />} />
+            <Route path="/confirmHabit0/:habitId/:token" exact element={<CaptchaToken/>} />
+            <Route path="/confirmHabit1/:habitId/:token" exact element={<RunToken/>} />
           </Routes>
       </Box>
     </div>

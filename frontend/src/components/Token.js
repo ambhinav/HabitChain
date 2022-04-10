@@ -90,23 +90,7 @@ const Token = () => {
   // console.log(activityArr);
 
   const verifyActivity = async () => {
-    try {
-      const web3 = await getWeb3();
-      const accounts = await web3.eth.getAccounts();
-      setAccounts(accounts);
-      // create instanace of contract
-      const networkId = await web3.eth.net.getId();
-      const networkData = Habit.networks[networkId];
-      const habit = new web3.eth.Contract(Habit.abi, networkData.address);
-      setContract(habit);
-      const startTime = await habit.methods.get_start_time(habitId).call();
-      const currTime = Math.floor(Date.now() / 1000);
-      const dayDiff = Math.abs(currTime - startTime) / 60 / 60 / 24;
-      console.log(dayDiff);
-      await habit.methods.verify(habitId, accounts[0], dayDiff).send({from: accounts[0]});
-    } catch (error) {
-      alert(error);
-    }
+   history(`/confirmHabit1/${habitId}/${CODE}`)
   }
 
   return (

@@ -70,7 +70,7 @@ const MyHabits = () => {
 
         const currTime = Math.floor(Date.now() / 1000);
         if (currTime >= currStartTime) {
-          const dayDiff = Math.abs(currTime - currStartTime) / 60 / 60 / 24;
+          const dayDiff = Math.floor(Math.abs(currTime - currStartTime) / 60 / 60 / 24);
           console.log(dayDiff);
           const arrTime = checkList;
           if (arrTime[dayDiff] == 1) {

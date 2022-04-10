@@ -36,11 +36,17 @@ module.exports = async function (done) {
         const user7 = accounts[7];
 
         // Set up random start times for the five habits
-        var start_time1 = adjust_to_sec(set_time(moment().add(1, 'days'), 8).valueOf());
-        var start_time2 = adjust_to_sec(set_time(moment().add(2, 'days'), 12).valueOf());
-        var start_time3 = adjust_to_sec(set_time(moment().add(3, 'days'), 9).valueOf());
-        var start_time4 = adjust_to_sec(set_time(moment().add(4, 'days'), 6).valueOf());
-        var start_time5 = adjust_to_sec(set_time(moment().add(5, 'days'), 10).valueOf());
+        // var start_time1 = adjust_to_sec(set_time(moment().add(1, 'days'), 8).valueOf());
+        // var start_time2 = adjust_to_sec(set_time(moment().add(2, 'days'), 12).valueOf());
+        // var start_time3 = adjust_to_sec(set_time(moment().add(3, 'days'), 9).valueOf());
+        // var start_time4 = adjust_to_sec(set_time(moment().add(4, 'days'), 6).valueOf());
+        // var start_time5 = adjust_to_sec(set_time(moment().add(5, 'days'), 10).valueOf());
+
+        var start_time1 = adjust_to_sec(set_time(moment().add(1, 'hours'), 8).valueOf());
+        var start_time2 = adjust_to_sec(set_time(moment().add(1, 'hours'), 12).valueOf());
+        var start_time3 = adjust_to_sec(set_time(moment().add(1, 'hours'), 9).valueOf());
+        var start_time4 = adjust_to_sec(set_time(moment().add(1, 'hours'), 6).valueOf());
+        var start_time5 = adjust_to_sec(set_time(moment().add(1, 'hours'), 10).valueOf());
 
         /// Create five of habits
         console.log(chalk.blue("========= Creating habits ========="));

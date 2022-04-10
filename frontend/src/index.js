@@ -4,10 +4,15 @@ import "./index.css";
 import App from "./App";
 import * as serviceWorker from "./serviceWorker";
 import { BrowserRouter } from "react-router-dom";
+import AdapterDateFns from "@mui/lab/AdapterDateFns";
+import LocalizationProvider from "@mui/lab/LocalizationProvider";
+import AdapterDateMoment from "@mui/lab/AdapterMoment";
 
 ReactDOM.render(
   <BrowserRouter>
-    <App />
+    <LocalizationProvider dateAdapter={AdapterDateMoment}>
+      <App />
+    </LocalizationProvider>
   </BrowserRouter>,
   document.getElementById("root")
 );

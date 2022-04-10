@@ -1,47 +1,115 @@
-import { Typography } from '@mui/material';
-import React from 'react';
-import moment from 'moment';
-import getWeb3 from '../ethereum/getWeb3';
-import Habit from '../contracts/Habit.json';
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CircularProgress,
+  Select,
+  TextField,
+  Typography,
+  MenuItem,
+  Button
+} from "@mui/material";
+import React, { useState, useEffect } from "react";
+import moment from "moment";
+import getWeb3 from "../ethereum/getWeb3";
+import Habit from "../contracts/Habit.json";
+import { DatePicker } from "@mui/x-date-pickers";
 
 const CreateHabit = () => {
-  React.useEffect(() => runExample(), []);
+  const [contract, setContract] = useState(null);
+  const [accounts, setAccounts] = useState([]);
+  const [form, setForm] = useState({ startTime: null, habitType: 0 });
+  useEffect(() => loadContract(), []);
 
-  const runExample = async () => {
-    // const { accounts, contract } = this.state;
-
-    // Stores a given value, 5 by default.
-    // await contract.methods.set(5).send({ from: accounts[0] });
-
-    // Get the value from the contract to prove it worked.
-    // const response = await contract.methods.get().call();
-
-    // Update state with the result.
-    // this.setState({ storageValue: response });
-    // setStorageValue(response);
-    console.log("running example...");
+  const loadContract = async () => {
     try {
       const web3 = await getWeb3();
       const accounts = await web3.eth.getAccounts();
+      setAccounts(accounts);
       // create instanace of contract
       const networkId = await web3.eth.net.getId();
       const networkData = Habit.networks[networkId];
       const habit = new web3.eth.Contract(Habit.abi, networkData.address);
-      console.log("Habit contract initialised", habit);
-      // create habit id 0 with start time a day from now
-      const startTime = Math.floor(moment().add(1, 'day').valueOf() / 1e3);
-      await habit.methods.create_habit(startTime, 0).send({from: accounts[0]});
-      const numHabits = await habit.methods.get_num_habits().call()
-      alert(`Challenge ${numHabits} created -> id is ${numHabits - 1}`);
+      setContract(habit);
+      // console.log("Habit contract initialised", habit);
+      // const startTime = Math.floor(moment().add(1, 'day').valueOf() / 1e3);
+      // await habit.methods.create_habit(startTime, 0).send({from: accounts[0]});
+      // const numHabits = await habit.methods.get_num_habits().call()
+      // alert(`Challenge ${numHabits} created -> id is ${numHabits - 1}`);
     } catch (err) {
       console.log(err);
-      alert('Failed to run example');
+      alert("Failed to run example");
     }
   };
 
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (form.startTime == null || form.startTime < Date.now()) {
+      alert("Please select a date in the future");
+    } else {
+      try {
+        await contract.methods
+          .create_habit(form.startTime.unix(), form.habitType)
+          .send({ from: accounts[0] });
+        alert("Successfully created a new habit");
+      } catch (error) {
+        alert(error);
+      }
+    }
+  };
+
+  if(form.startTime) {
+    console.log(form.startTime.unix())
+  }
+
   return (
-      <Typography>Creating Habit...</Typography>
+    <div>
+      {contract ? (
+        <div>
+          <Card
+            sx={{
+              minWidth: 500,
+              minHeight: 200,
+              padding: 10,
+              margin: 10,
+              textAlign: "center",
+            }}
+          >
+            <CardHeader title={`Create a New Habit`} />
+            <form onSubmit={handleSubmit}>
+              <div>
+                <DatePicker
+                  label="Select a Start Date"
+                  value={form.startTime}
+                  onChange={(date) => setForm({ ...form, startTime: date })}
+                  renderInput={(params) => <TextField {...params} />}
+                />
+              </div>
+              <br />
+              <Select
+                sx={{ minWidth: 260 }}
+                value={form.habitType}
+                label="Habit Category"
+                onChange={(e) =>
+                  setForm({ ...form, habitType: e.target.value })
+                }
+              >
+                <MenuItem value={0}>Rise and Shine Habit</MenuItem>
+                <MenuItem value={1}>Keep Active and Run Habit</MenuItem>
+              </Select>
+
+              <br />
+              <Button variant="contained" type="submit">
+                Submit
+              </Button>
+            </form>
+          </Card>
+        </div>
+      ) : (
+        <CircularProgress />
+      )}
+    </div>
   );
-}
+};
 
 export default CreateHabit;
