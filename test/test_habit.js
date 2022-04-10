@@ -50,18 +50,6 @@ contract('Habit', function(accounts) {
         let habit_type = await habit_instance.get_habit_type(0);
         let num_habits = await habit_instance.get_num_habits();
 
-        // print type of obj1
-        // console.log(typeof obj1);
-        // console.log(obj1[0].toNumber());
-        // console.log(obj1[1].toNumber());
-        // console.log(obj1[2].toNumber());
-
-
-
-
-        // console.log("Start time: " + _s_time);
-        //console.log("Start time2: ", y.toNumber() , m.toNumber(), d.toNumber());
-
         assert.strictEqual(
             _s_time.toNumber(),
             TEST_START_TIME,
@@ -160,7 +148,6 @@ contract('Habit', function(accounts) {
         let user1_day3_verified = await habit_instance.tick_user_list(0, accounts[1], 3);
         let user1_day4_verified = await habit_instance.tick_user_list(0, accounts[1], 4);
 
-        // console.log(user1_day4_verified);
         /* 
         // DO NOT DELETE, just leave it in comments: iterating through the user's checklist
         let is_user1_array = await habit_instance.get_user_check_list.call(0, accounts[1]);
@@ -362,7 +349,6 @@ contract('Habit', function(accounts) {
         let end_habit = await habit_instance.end_habit(1, {from: accounts[0]});
 
         truffleAssert.eventEmitted(end_habit, 'AllLose', (ev) => {
-            // emit AllLose(habit_id, loser_pool);
             return ev.habit_id == 1 && expect(ev.lose_amt).to.eql(web3.utils.toBN(1e18 * 2)); 
         }, 'All Lose event not emitted with correct params');
 
@@ -376,6 +362,43 @@ contract('Habit', function(accounts) {
         expect(web3.utils.toBN(balance)).to.eql(web3.utils.toBN(1e18 * 2));
     });
 
+    it('Checks all 3 habits (0, 1, 2) has ended', async() => {
+        let habit0 = await habit_instance.is_habit_deleted(0, {from: accounts[0]});
+        let habit1 = await habit_instance.is_habit_deleted(1, {from: accounts[0]});
+        let habit2 = await habit_instance.is_habit_deleted(2, {from: accounts[0]});
+
+        assert.strictEqual(
+            habit0,
+            true,
+            'Habit 0 failed to end'
+        );
+        assert.strictEqual(
+            habit1,
+            true,
+            'Habit 1 failed to end'
+        );
+        assert.strictEqual(
+            habit2,
+            true,
+            'Habit 2 failed to end'
+        );
+    });
+
+    it('join_habit, tick_user_list, end_habit should fail on an ended habit', async() => {
+        await truffleAssert.reverts(
+            habit_instance.join_habit(0, {from: accounts[7], value: web3.utils.toBN(1e18)}),
+            "Habit has been deleted"
+        );
+        await truffleAssert.reverts(
+            habit_instance.tick_user_list(0, accounts[5], 0),
+            "Habit has been deleted"
+        );
+        await truffleAssert.reverts(
+            habit_instance.end_habit(0, {from: accounts[0]}),
+            "Habit has been deleted"
+        );
+    });
+
     it('Withdraw() fails when non contract owner calls it', async () => {
         return truffleAssert.reverts(
             habit_instance.withdraw(web3.utils.toBN(1e18), {from: accounts[1]}),
@@ -385,20 +408,16 @@ contract('Habit', function(accounts) {
 
     it("Contract owner withdraws 1 eth from main_pool of 2 eth to get a remainder of 1 eth in the main pool", async () => {
         let main_pool = await habit_instance.get_main_pool();
-        // console.log(main_pool.toString());
-        // let pool = await habit_instance.get_pool(0);
         expect(main_pool).to.eql(web3.utils.toBN(1e18 * 2)); 
 
         let owner_withdraws_1eth = await habit_instance.withdraw(web3.utils.toBN(1e18), {from: accounts[0]})
         let main_pool2 = await habit_instance.get_main_pool();
-        // console.log(main_pool2.toString());
         expect(main_pool2).to.eql(web3.utils.toBN(1e18)); 
     });
 
     it("Cannot withdraw more than main_pool available", async () => {
         let owner_withdraws_1eth = await habit_instance.withdraw(web3.utils.toBN(1e18), {from: accounts[0]})
         let main_pool2 = await habit_instance.get_main_pool();
-        console.log(main_pool2.toString());
         expect(main_pool2).to.eql(web3.utils.toBN(0)); 
 
         await truffleAssert.reverts(
