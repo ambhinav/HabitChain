@@ -5,6 +5,11 @@ const { verify } = require("crypto");
 const helper = require('./truffleTestHelper');
 
 var Habit = artifacts.require("../contracts/Habit.sol");
+/*
+Every test needs you to restart the ganache instance. This is because the tests create a habit in the array of habits.
+
+So when you try and rerun the test, the creating of habits does not start at 0. 
+*/
 
 contract('Habit', function(accounts) {
 
@@ -45,18 +50,6 @@ contract('Habit', function(accounts) {
         let habit_type = await habit_instance.get_habit_type(0);
         let num_habits = await habit_instance.get_num_habits();
 
-        // print type of obj1
-        // console.log(typeof obj1);
-        // console.log(obj1[0].toNumber());
-        // console.log(obj1[1].toNumber());
-        // console.log(obj1[2].toNumber());
-
-
-
-
-        // console.log("Start time: " + _s_time);
-        //console.log("Start time2: ", y.toNumber() , m.toNumber(), d.toNumber());
-
         assert.strictEqual(
             _s_time.toNumber(),
             TEST_START_TIME,
@@ -89,6 +82,7 @@ contract('Habit', function(accounts) {
 
     });
 
+    // user 1 joins with 1e18, user 2 with 1e18 habit 0
     it('User can join habit', async () => {
         let user_joins = await habit_instance.join_habit(0, {from: accounts[1], value: web3.utils.toBN(1e18)});
         let user_joins_2 = await habit_instance.join_habit(0, {from: accounts[2], value: web3.utils.toBN(1e18)});
@@ -121,6 +115,10 @@ contract('Habit', function(accounts) {
         );
     });
 
+    /*
+    Check the pool of habit 0
+    check if user 0 joined habit 0 (he did not)
+    */
     it('Verify habit fields after user joins', async () => {
         let pool = await habit_instance.get_pool(0);
         let is_user_joined_habit_zero = await habit_instance.is_user_joined_habit(0, accounts[1]);
@@ -135,55 +133,46 @@ contract('Habit', function(accounts) {
     });
 
     /*
-    user1 verifies on days 1 to 3 (0 to 2 index)
+    user1 will tick his checklist for all 5 days (0 indexed)
+    user2 will only tick checklist on day 2
     */
-    it("Verifying consistently up to day offset results in a winner", async () => {
-        let user1_day0_verified = await habit_instance.verify(0, accounts[1], 0);
-        let user1_day1_verified = await habit_instance.verify(0, accounts[1], 1);
-        let user1_day2_verified = await habit_instance.verify(0, accounts[1], 2);
-        // console.log(user1_day0_verified, user1_day1_verified, user1_day2_verified)
-        let is_user1_loser1 = await habit_instance.is_user_a_loser(0, accounts[1]);
-        /* check user1 array after 3 days
-        let is_user1_array1 = await habit_instance.get_user_check_list.call(0, accounts[1]);
+    it("Account 1 checks off all days, Account 2 checks off only 1 day", async () => {
+        let user1_day0_verified = await habit_instance.tick_user_list(0, accounts[1], 0);
+        truffleAssert.eventEmitted(user1_day0_verified, 'TickUserList', (ev) => {
+            return ev.user_addr == accounts[1] && 
+                   ev.habit_id == 0 &&
+                   ev.date_num == 0;
+        }, 'Ticking of user1 checklist at Day 0 is not correct');
+        let user1_day1_verified = await habit_instance.tick_user_list(0, accounts[1], 1);
+        let user1_day2_verified = await habit_instance.tick_user_list(0, accounts[1], 2);
+        let user1_day3_verified = await habit_instance.tick_user_list(0, accounts[1], 3);
+        let user1_day4_verified = await habit_instance.tick_user_list(0, accounts[1], 4);
+
+        /* 
+        // DO NOT DELETE, just leave it in comments: iterating through the user's checklist
+        let is_user1_array = await habit_instance.get_user_check_list.call(0, accounts[1]);
         // loop through array of big numbers
-        for (let i = 0; i < is_user1_array1.length; i++) {
-            console.log(is_user1_array1[i].toNumber());
-        }
-        */
-        assert.strictEqual(
-            is_user1_loser1,
-            false,
-            "users check_list not filled properly"
-        )
-
-    });
-
-    /*
-    user1 skips verifying on day 4
-    user1 verifies on day 5. user1 should be labelled as a loser.
-    */
-    it("Skipping a day and then verify results in a loser", async () => {
-
-        let user1_day4_verified = await habit_instance.verify(0, accounts[1], 4);
-        // console.log(user1_day4_verified);
-        // let is_user1_array2 = await habit_instance.get_user_check_list(0, accounts[1]);
-        /* check user1 array after 5 days and skipping day 4
-        let is_user1_array2 = await habit_instance.get_user_check_list.call(0, accounts[1]);
-        // loop through array of big numbers
-        for (let i = 0; i < is_user1_array2.length; i++) {
-            console.log(is_user1_array2[i].toNumber());
+        console.log('user 1 checklist')
+        for (let i = 0; i < is_user1_array.length; i++) {
+            console.log(is_user1_array[i].toNumber());
         }
         */
 
-        // console.log(is_user1_array2);
-        let is_user1_loser2 = await habit_instance.is_user_a_loser(0, accounts[1]);
-        assert.strictEqual(
-            is_user1_loser2,
-            true,
-            "users check_list not filled properly 2"
-        )
-    });
+        truffleAssert.eventEmitted(user1_day4_verified, 'TickUserList', (ev) => {
+            return ev.user_addr == accounts[1] && 
+                   ev.habit_id == 0 &&
+                   ev.date_num == 4;
+        }, 'Ticking of user1 checklist at Day 4 is not correct');
 
+        // only tick day2 for user 2
+        let user2_day2_verified = await habit_instance.tick_user_list(0, accounts[2], 2);
+
+        truffleAssert.eventEmitted(user2_day2_verified, 'TickUserList', (ev) => {
+            return ev.user_addr == accounts[2] && 
+                   ev.habit_id == 0 &&
+                   ev.date_num == 2;
+        }, 'Ticking of user2 checklist at Day 2 is not correct');
+    });
 
     it('End habit fails when non contract owner calls it', async () => {
         return truffleAssert.reverts(
@@ -199,6 +188,9 @@ contract('Habit', function(accounts) {
         );
     });
 
+    /*
+    user1 will win habit 0. Will get 2 eth. total in wallet should be ~101 eth
+    */
     it('Returns money to 1 winner', async () => {
         const new_block = await helper.advanceTimeAndBlock(FIVE_DAYS_IN_SECONDS + 100);
         let end_habit = await habit_instance.end_habit(0, {from: accounts[0]});
@@ -210,12 +202,19 @@ contract('Habit', function(accounts) {
         );
 
         truffleAssert.eventEmitted(end_habit, 'EndHabit', (ev) => {
-            return ev.winner == accounts[2] && ev.habit_id == 0 &&
+            return ev.winner == accounts[1] && ev.habit_id == 0 &&
                 expect(ev.win_amt).to.eql(web3.utils.toBN(1e18 * 2)); 
         }, 'End Habit event not emitted with correct params');
     });
 
 
+    /*
+    habit 1 created by user3
+    joined by user3 (1 eth) and user4 (1 eth)
+
+    habit 2 created by user5
+    joined by user5 (1 eth) and user6 (1 eth)
+    */
     it('Create 2 new habits with two users each', async () => {
         const NEW_START_TIME = TEST_START_TIME + FIVE_DAYS_IN_SECONDS + 200;
     
@@ -292,50 +291,39 @@ contract('Habit', function(accounts) {
        }, 'Join Habit event not emitted with correct params');  
     });
 
-    /*
-    user1 verifies on days 1 to 3 (0 to 2 index)
-    */
-    it("Losing user account 5 and 6", async () => {
-        let user1_day0_verified = await habit_instance.verify(2, accounts[5], 0);
-        let user1_day1_verified = await habit_instance.verify(2, accounts[5], 1);
-        let user1_day2_verified = await habit_instance.verify(2, accounts[5], 2);
-        let is_user1_loser1 = await habit_instance.is_user_a_loser(2, accounts[5]);
-        assert.strictEqual(
-            is_user1_loser1,
-            false,
-            "user1 check_list not filled properly"
-        );
+    it("Accounts 5 and 6 check off all their days", async () => {
+        let user5_day0_verified = await habit_instance.tick_user_list(2, accounts[5], 0);
+        let user5_day1_verified = await habit_instance.tick_user_list(2, accounts[5], 1);
+        let user5_day2_verified = await habit_instance.tick_user_list(2, accounts[5], 2);
+        let user5_day3_verified = await habit_instance.tick_user_list(2, accounts[5], 3);
+        let user5_day4_verified = await habit_instance.tick_user_list(2, accounts[5], 4);
 
-        let user1_day4_verified = await habit_instance.verify(2, accounts[5], 4);
-        let is_user1_loser2 = await habit_instance.is_user_a_loser(2, accounts[5]);
-        assert.strictEqual(
-            is_user1_loser2,
-            true,
-            "user1 check_list not filled properly 2"
-        );
+        truffleAssert.eventEmitted(user5_day4_verified, 'TickUserList', (ev) => {
+            return ev.habit_id == 2 &&
+                   ev.user_addr == accounts[5] && 
+                   ev.date_num == 4;
+        }, 'Ticking of user5 checklist at Day 4 is not correct');
 
-        let user2_day0_verified = await habit_instance.verify(2, accounts[6], 0);
-        let user2_day1_verified = await habit_instance.verify(2, accounts[6], 1);
-        let user2_day2_verified = await habit_instance.verify(2, accounts[6], 2);
-        let is_user2_loser1 = await habit_instance.is_user_a_loser(2, accounts[6]);
-        assert.strictEqual(
-            is_user2_loser1,
-            false,
-            "user2 check_list not filled properly"
-        );
 
-        let user2_day4_verified = await habit_instance.verify(2, accounts[6], 4);
-        let is_user2_loser2 = await habit_instance.is_user_a_loser(2, accounts[6]);
-        assert.strictEqual(
-            is_user2_loser2,
-            true,
-            "user2 check_list not filled properly 2"
-        );
+        let user6_day0_verified = await habit_instance.tick_user_list(2, accounts[6], 0);
+        let user6_day1_verified = await habit_instance.tick_user_list(2, accounts[6], 1);
+        let user6_day2_verified = await habit_instance.tick_user_list(2, accounts[6], 2);
+        let user6_day3_verified = await habit_instance.tick_user_list(2, accounts[6], 3);
+        let user6_day4_verified = await habit_instance.tick_user_list(2, accounts[6], 4);
+
+        truffleAssert.eventEmitted(user6_day4_verified, 'TickUserList', (ev) => {
+            return ev.habit_id == 2 &&
+                   ev.user_addr == accounts[6] && 
+                   ev.date_num == 4;
+        }, 'Ticking of user6 checklist at Day 4 is not correct');
     });
 
+    /*
+    habit 2: user5 and user6 check off all their days so both should get their amt back (~100 eth in wallets)
+    */
     it('Returns money to both winners', async () => {
         const new_block = await helper.advanceTimeAndBlock(FIVE_DAYS_IN_SECONDS + 500);
-        let end_habit = await habit_instance.end_habit(1, {from: accounts[0]});
+        let end_habit = await habit_instance.end_habit(2, {from: accounts[0]});
 
         assert.notStrictEqual(
             end_habit,
@@ -344,17 +332,25 @@ contract('Habit', function(accounts) {
         );
 
         truffleAssert.eventEmitted(end_habit, 'EndHabit', (ev) => {
-            return ev.winner == accounts[3] && ev.habit_id == 1 &&
+            return ev.winner == accounts[5] && ev.habit_id == 2 &&
                 expect(ev.win_amt).to.eql(web3.utils.toBN(1e18)); 
         }, 'End Habit event not emitted with correct params');
         truffleAssert.eventEmitted(end_habit, 'EndHabit', (ev) => {
-            return ev.winner == accounts[4] && ev.habit_id == 1 &&
+            return ev.winner == accounts[6] && ev.habit_id == 2 &&
                 expect(ev.win_amt).to.eql(web3.utils.toBN(1e18)); 
         }, 'End Habit event not emitted with correct params');
     });
 
+    /*
+    habit 1: user3 and user4 both did not finish.
+    Main pool will keep their money (2 eth)
+    */
     it('Does not return money to anyone', async () => {
-        let end_habit = await habit_instance.end_habit(2, {from: accounts[0]});
+        let end_habit = await habit_instance.end_habit(1, {from: accounts[0]});
+
+        truffleAssert.eventEmitted(end_habit, 'AllLose', (ev) => {
+            return ev.habit_id == 1 && expect(ev.lose_amt).to.eql(web3.utils.toBN(1e18 * 2)); 
+        }, 'All Lose event not emitted with correct params');
 
         assert.notStrictEqual(
             end_habit,
@@ -364,6 +360,70 @@ contract('Habit', function(accounts) {
 
         let balance = await web3.eth.getBalance(habit_instance.address);
         expect(web3.utils.toBN(balance)).to.eql(web3.utils.toBN(1e18 * 2));
+    });
+
+    it('Checks all 3 habits (0, 1, 2) has ended', async() => {
+        let habit0 = await habit_instance.is_habit_deleted(0, {from: accounts[0]});
+        let habit1 = await habit_instance.is_habit_deleted(1, {from: accounts[0]});
+        let habit2 = await habit_instance.is_habit_deleted(2, {from: accounts[0]});
+
+        assert.strictEqual(
+            habit0,
+            true,
+            'Habit 0 failed to end'
+        );
+        assert.strictEqual(
+            habit1,
+            true,
+            'Habit 1 failed to end'
+        );
+        assert.strictEqual(
+            habit2,
+            true,
+            'Habit 2 failed to end'
+        );
+    });
+
+    it('join_habit, tick_user_list, end_habit should fail on an ended habit', async() => {
+        await truffleAssert.reverts(
+            habit_instance.join_habit(0, {from: accounts[7], value: web3.utils.toBN(1e18)}),
+            "Habit has been deleted"
+        );
+        await truffleAssert.reverts(
+            habit_instance.tick_user_list(0, accounts[5], 0),
+            "Habit has been deleted"
+        );
+        await truffleAssert.reverts(
+            habit_instance.end_habit(0, {from: accounts[0]}),
+            "Habit has been deleted"
+        );
+    });
+
+    it('Withdraw() fails when non contract owner calls it', async () => {
+        return truffleAssert.reverts(
+            habit_instance.withdraw(web3.utils.toBN(1e18), {from: accounts[1]}),
+            "Only owner of this contract can call this method"
+        );
+    });
+
+    it("Contract owner withdraws 1 eth from main_pool of 2 eth to get a remainder of 1 eth in the main pool", async () => {
+        let main_pool = await habit_instance.get_main_pool();
+        expect(main_pool).to.eql(web3.utils.toBN(1e18 * 2)); 
+
+        let owner_withdraws_1eth = await habit_instance.withdraw(web3.utils.toBN(1e18), {from: accounts[0]})
+        let main_pool2 = await habit_instance.get_main_pool();
+        expect(main_pool2).to.eql(web3.utils.toBN(1e18)); 
+    });
+
+    it("Cannot withdraw more than main_pool available", async () => {
+        let owner_withdraws_1eth = await habit_instance.withdraw(web3.utils.toBN(1e18), {from: accounts[0]})
+        let main_pool2 = await habit_instance.get_main_pool();
+        expect(main_pool2).to.eql(web3.utils.toBN(0)); 
+
+        await truffleAssert.reverts(
+            habit_instance.withdraw(web3.utils.toBN(1e18), {from: accounts[0]}),
+            "Amount is too big to withdraw."
+        );
     });
     
 });
