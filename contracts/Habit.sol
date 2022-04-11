@@ -20,7 +20,6 @@ contract Habit {
         uint habit_type;
         uint wake_up_time; //set to 8AM
         uint run_distance; //set to 5KM
-
         bool is_deleted;
     }
 
@@ -81,7 +80,7 @@ contract Habit {
                 num_users: 0,
                 habit_type: habit_type_,
                 wake_up_time: 8*60, //minutes from 00:00 midnight
-                run_distance: 5000 //meters
+                run_distance: 5000, //meters
                 is_deleted: false
             }
         );
@@ -253,6 +252,7 @@ contract Habit {
 
     function get_wake_up_time(uint256 habit_id) public view is_valid_id(habit_id) returns (uint256) {
         return habits[habit_id].wake_up_time;
+    }
 
     function get_main_pool() public view returns (uint256) {
         return main_pool;
