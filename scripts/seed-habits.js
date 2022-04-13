@@ -15,7 +15,7 @@ const adjust_to_sec = time => Math.floor(time / 1e3);
 module.exports = async function (done) {
     try {
         // Connect to the deployed Habit contract and get some info
-        console.log(chalk.blue("========= Connecting to deployed Habit Contract ========="))
+        console.log(chalk.blue("========= Connecting to deployed Habit Contract @dev network ========="))
         let habit_instance = await Habit.deployed();
         console.log(chalk.green("=========> Habit contract is deployed and available"));
         let habit_contract_address = habit_instance.address;

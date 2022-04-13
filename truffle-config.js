@@ -17,8 +17,8 @@
  * phrase from a file you've .gitignored so it doesn't accidentally become public.
  *
  */
-
-// const HDWalletProvider = require('@truffle/hdwallet-provider');
+require('dotenv').config();
+const HDWalletProvider = require('@truffle/hdwallet-provider');
 //
 // const fs = require('fs');
 // const mnemonic = fs.readFileSync(".secret").toString().trim();
@@ -41,10 +41,22 @@ module.exports = {
     // tab if you use this network and you must also set the `host`, `port` and `network_id`
     // options below to some value.
     //
+    rinkeby: {
+      provider: function () {
+        return new HDWalletProvider({
+          mnemonic: {
+            phrase: process.env.MNEMONIC
+          },
+          providerOrUrl: process.env.PROJECT_ENDPOINT,
+          numberOfAddresses: 10 // since ganache has 10 as well
+        });
+      },
+      network_id: 4,
+    },
     development: {
-        host: "127.0.0.1",     // Localhost (default: none)
-        port: 7545,            // Standard Ethereum port (default: none)
-        network_id: "*",       // Any network (default: none)
+      host: process.env.LOCAL_ENDPOINT.split(":")[1].slice(2),
+      port: process.env.LOCAL_ENDPOINT.split(":")[2],
+      network_id: "*",
     },
     // Another network with more advanced options...
     // advanced: {
@@ -104,13 +116,13 @@ module.exports = {
   // $ truffle migrate --reset --compile-all
   //
   // db: {
-    // enabled: false,
-    // host: "127.0.0.1",
-    // adapter: {
-    //   name: "sqlite",
-    //   settings: {
-    //     directory: ".db"
-    //   }
-    // }
+  // enabled: false,
+  // host: "127.0.0.1",
+  // adapter: {
+  //   name: "sqlite",
+  //   settings: {
+  //     directory: ".db"
+  //   }
+  // }
   // }
 };

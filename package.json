@@ -1,14 +1,17 @@
 {
   "scripts": {
     "copy-contracts-build": "echo \" Copying build/contracts/* files into ./frontend/src/contracts \" && copyfiles -f build/contracts/* ./frontend/src/contracts",
-    "deploy:local": "(truffle.cmd migrate --reset || truffle migrate --reset) && truffle exec scripts/seed-habits.js && npm run copy-contracts-build"
+    "deploy:local": "truffle migrate --reset && truffle exec scripts/seed-habits.js && npm run copy-contracts-build && node index.js",
+    "deploy:testnet": "truffle migrate --network rinkeby --reset --compile-all && truffle exec scripts/seed-habits-testnet.js --network rinkeby && npm run copy-contracts-build",
   },
   "dependencies": {
     "@slider-captcha/core": "^1.0.1",
+    "@truffle/hdwallet-provider": "^2.0.5",
     "body-parser": "^1.19.2",
     "chalk": "^5.0.1",
     "copyfiles": "^2.4.1",
     "cors": "^2.8.5",
+    "dot-env": "^0.0.1",
     "express": "^4.17.3",
     "express-session": "^1.17.2",
     "moment": "^2.29.2",
