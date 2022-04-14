@@ -35,7 +35,7 @@ const RunToken = () => {
       const currTime = Math.floor(Date.now() / 1000);
       const dayDiff = Math.floor(Math.abs(currTime - startTime) / 60 / 60 / 24);
       const response = await habit.methods
-        .verify(habitId, accounts[0], dayDiff)
+        .tick_user_list(habitId, accounts[0], dayDiff)
         .send({ from: accounts[0] });
 
       console.log(response);

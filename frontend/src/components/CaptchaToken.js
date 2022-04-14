@@ -34,7 +34,7 @@ const CaptchaToken = () => {
     try {
       const curr = new Date();
       console.log(curr.getHours());
-      if (curr.getHours() > 8) {
+      if (curr.getHours() > 8) { 
         //late
         alert("You woke up late today");
       } else {
@@ -44,7 +44,7 @@ const CaptchaToken = () => {
           Math.abs(currTime - startTime) / 60 / 60 / 24
         );
         const response = await habit.methods
-          .verify(habitId, accounts[0], dayDiff)
+          .tick_user_list(habitId, accounts[0], dayDiff)
           .send({ from: accounts[0] });
 
         console.log(response);

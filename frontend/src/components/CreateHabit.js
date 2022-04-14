@@ -42,18 +42,28 @@ const CreateHabit = () => {
     }
   };
 
+  const set_time = (start_time) => {
+    start_time.set('hour', 0);
+    start_time.set('minute', 0);
+    start_time.set('second', 0);
+    start_time.set('millisecond', 0);
+    return start_time;
+};
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (form.value <= 0) {
       alert("Must pledge amount > 0!");
     }
-    if (form.startTime == null || form.startTime < Date.now()) {
+    if (form.startTime == null || form.startTime <= Date.now()) {
       alert("Please select a date in the future");
     } else {
       try {
         await contract.methods
-          .create_habit(form.startTime.unix(), form.habitType)
+          .create_habit(set_time(form.startTime).unix(), form.habitType)
           .send({ from: accounts[0], value: form.value * 1e18 });
+
+        console.log(set_time(form.startTime));
         alert("Successfully created a new habit");
       } catch (error) {
         alert(error);
