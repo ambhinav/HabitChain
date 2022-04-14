@@ -7,7 +7,7 @@ import {
   TextField,
   Typography,
   MenuItem,
-  Button
+  Button,
 } from "@mui/material";
 import React, { useState, useEffect } from "react";
 import moment from "moment";
@@ -18,7 +18,7 @@ import { DatePicker } from "@mui/x-date-pickers";
 const CreateHabit = () => {
   const [contract, setContract] = useState(null);
   const [accounts, setAccounts] = useState([]);
-  const [form, setForm] = useState({ startTime: null, habitType: 0 });
+  const [form, setForm] = useState({ startTime: null, habitType: 0, value: 0 });
   useEffect(() => loadContract(), []);
 
   const loadContract = async () => {
@@ -44,13 +44,16 @@ const CreateHabit = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (form.value <= 0) {
+      alert("Must pledge amount > 0!");
+    }
     if (form.startTime == null || form.startTime < Date.now()) {
       alert("Please select a date in the future");
     } else {
       try {
         await contract.methods
           .create_habit(form.startTime.unix(), form.habitType)
-          .send({ from: accounts[0] });
+          .send({ from: accounts[0], value: form.value * 1e18 });
         alert("Successfully created a new habit");
       } catch (error) {
         alert(error);
@@ -58,8 +61,8 @@ const CreateHabit = () => {
     }
   };
 
-  if(form.startTime) {
-    console.log(form.startTime.unix())
+  if (form.startTime) {
+    console.log(form.startTime.unix());
   }
 
   return (
@@ -84,21 +87,28 @@ const CreateHabit = () => {
                   onChange={(date) => setForm({ ...form, startTime: date })}
                   renderInput={(params) => <TextField {...params} />}
                 />
-              </div>
-              <br />
-              <Select
-                sx={{ minWidth: 260 }}
-                value={form.habitType}
-                label="Habit Category"
-                onChange={(e) =>
-                  setForm({ ...form, habitType: e.target.value })
-                }
-              >
-                <MenuItem value={0}>Rise and Shine Habit</MenuItem>
-                <MenuItem value={1}>Keep Active and Run Habit</MenuItem>
-              </Select>
 
-              <br />
+                <br />
+                <Select
+                  sx={{ minWidth: 260, marginTop: "10px" }}
+                  value={form.habitType}
+                  label="Habit Category"
+                  onChange={(e) =>
+                    setForm({ ...form, habitType: e.target.value })
+                  }
+                >
+                  <MenuItem value={0}>Rise and Shine Habit</MenuItem>
+                  <MenuItem value={1}>Keep Active and Run Habit</MenuItem>
+                </Select>
+
+                <br />
+                <TextField
+                  sx={{ minWidth: 260, marginTop: "10px", marginBottom: "10px" }}
+                  value={form.value}
+                  label="Enter a Pledge Amount (ETH)"
+                  onChange={(e) => setForm({ ...form, value: e.target.value })}
+                ></TextField>
+              </div>
               <Button variant="contained" type="submit">
                 Submit
               </Button>

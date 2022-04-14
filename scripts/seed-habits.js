@@ -10,6 +10,7 @@ const set_time = (start_time, hour) => {
     return start_time;
 };
 
+
 const adjust_to_sec = time => Math.floor(time / 1e3);
 
 module.exports = async function (done) {
@@ -42,23 +43,23 @@ module.exports = async function (done) {
         // var start_time4 = adjust_to_sec(set_time(moment().add(4, 'days'), 6).valueOf());
         // var start_time5 = adjust_to_sec(set_time(moment().add(5, 'days'), 10).valueOf());
 
-        var start_time1 = adjust_to_sec(set_time(moment().add(1, 'hours'), 8).valueOf());
-        var start_time2 = adjust_to_sec(set_time(moment().add(1, 'hours'), 12).valueOf());
-        var start_time3 = adjust_to_sec(set_time(moment().add(1, 'hours'), 9).valueOf());
-        var start_time4 = adjust_to_sec(set_time(moment().add(1, 'hours'), 6).valueOf());
-        var start_time5 = adjust_to_sec(set_time(moment().add(1, 'hours'), 10).valueOf());
+        var start_time1 = adjust_to_sec(moment().add(10, 'minutes').valueOf());
+        var start_time2 = adjust_to_sec(moment().add(10, 'minutes').valueOf());
+        var start_time3 = adjust_to_sec(moment().add(10, 'minutes').valueOf());
+        var start_time4 = adjust_to_sec(moment().add(10, 'minutes').valueOf());
+        var start_time5 = adjust_to_sec(moment().add(10, 'minutes').valueOf());
 
         /// Create five of habits
         console.log(chalk.blue("========= Creating habits ========="));
 
         // 3 x habit type 0 -> Rise and Shine
-        await habit_instance.create_habit(start_time1, 0, { from: user1 });
-        await habit_instance.create_habit(start_time3, 0, { from: user2 });
-        await habit_instance.create_habit(start_time5, 0, { from: user3 });
+        await habit_instance.create_habit(start_time1, 0, { from: user1, value: web3.utils.toBN(0.5 * 1e18) });
+        await habit_instance.create_habit(start_time3, 0, { from: user2, value: web3.utils.toBN(0.5 * 1e18) });
+        await habit_instance.create_habit(start_time5, 0, { from: user3, value: web3.utils.toBN(0.5 * 1e18) });
 
         // 2 x habit type 1 -> Strava
-        await habit_instance.create_habit(start_time2, 1, { from: user4 });
-        await habit_instance.create_habit(start_time4, 1, { from: user5 });
+        await habit_instance.create_habit(start_time2, 1, { from: user4, value: web3.utils.toBN(0.5 * 1e18) });
+        await habit_instance.create_habit(start_time4, 1, { from: user5, value: web3.utils.toBN(0.5 * 1e18) });
 
         // Sanity check 1
         let num_habits = await habit_instance.get_num_habits();
@@ -75,27 +76,27 @@ module.exports = async function (done) {
         /// Let users join the habits
         console.log(chalk.blue("========= Users are joining habits ========="));
 
-        // Rise and Shine habits
+        //Rise and Shine habits
         await habit_instance.join_habit(0, {
-            from: user1,
+            from: user2,
             value: web3.utils.toBN(1e17)
         });
         await habit_instance.join_habit(0, {
-            from: user6, 
+            from: user3, 
             value: web3.utils.toBN(0.5 * 1e18)
         });
         await habit_instance.join_habit(1, {
-            from: user2, 
+            from: user4, 
             value: web3.utils.toBN(1e17)
         });
         await habit_instance.join_habit(2, {
-            from: user3, 
+            from: user5, 
             value: web3.utils.toBN(1e18)
         });
 
         // Strava habits
         await habit_instance.join_habit(3, {
-            from: user4,
+            from: user1,
             value: web3.utils.toBN(1e17)
         });
         await habit_instance.join_habit(3, { 
@@ -103,14 +104,14 @@ module.exports = async function (done) {
             value: web3.utils.toBN(0.5*1e18)
         });
         await habit_instance.join_habit(4, {
-            from: user5,
+            from: user6,
             value: web3.utils.toBN(1e18)
         });
 
         // Sanity check 2
         let num_users = await habit_instance.get_num_users(0);
         let pool = await habit_instance.get_pool(0);
-        if (num_users != 2) {
+        if (num_users != 3) {
             throw "Habit users count is incorrect";
         }
 
