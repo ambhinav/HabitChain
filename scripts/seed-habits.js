@@ -43,11 +43,11 @@ module.exports = async function (done) {
         // var start_time4 = adjust_to_sec(set_time(moment().add(4, 'days'), 6).valueOf());
         // var start_time5 = adjust_to_sec(set_time(moment().add(5, 'days'), 10).valueOf());
 
-        var start_time1 = adjust_to_sec(moment().add(5, 'seconds').valueOf());
-        var start_time2 = adjust_to_sec(moment().add(5, 'seconds').valueOf());
-        var start_time3 = adjust_to_sec(moment().add(5, 'seconds').valueOf());
-        var start_time4 = adjust_to_sec(moment().add(5, 'seconds').valueOf());
-        var start_time5 = adjust_to_sec(moment().add(5, 'seconds').valueOf());
+        var start_time1 = adjust_to_sec(moment().add(30, 'seconds').valueOf());
+        var start_time2 = adjust_to_sec(moment().add(30, 'seconds').valueOf());
+        var start_time3 = adjust_to_sec(moment().add(30, 'seconds').valueOf());
+        var start_time4 = adjust_to_sec(moment().add(30, 'seconds').valueOf());
+        var start_time5 = adjust_to_sec(moment().add(30, 'seconds').valueOf());
 
         /// Create five of habits
         console.log(chalk.blue("========= Creating habits ========="));
