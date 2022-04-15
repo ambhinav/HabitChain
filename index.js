@@ -40,7 +40,7 @@ app.get("/riseAndShine/captcha/create", async (req, res) => {
 
 app.post("/riseAndShine/captcha/verify", async (req, res) => {
   sliderCaptcha
-    .verify(req.session.captcha, req.body, { tolerance: 100 })
+    .verify(req.session.captcha, req.body, { tolerance: 10 })
     .then((verification) => {
       // console.log("verification", verification);
       // console.log("my value", req.session.captcha);

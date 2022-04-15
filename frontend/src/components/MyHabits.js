@@ -1,3 +1,4 @@
+import React, { useState, useEffect } from "react";
 import {
   Typography,
   Grid,
@@ -13,82 +14,25 @@ import {
   IconButton,
   Alert,
 } from "@mui/material";
-import React, { useState, useEffect } from "react";
 import moment from "moment";
 import getWeb3 from "../ethereum/getWeb3";
 import Habit from "../contracts/Habit.json";
 import { useNavigate } from "react-router-dom";
-import CloseIcon from '@mui/icons-material/Close';
 
-const JoinHabitDialog = ({openDialog, setOpenDialog, contract, habitId, account}) => {
-  const [formData, setFormData] = useState({ value: 0 });
-  console.log(habitId);
-
-  const handleClose = () => {
-    setOpenDialog(false);
-  };
-
-  const handleJoinHabit = async (e) => {
-    e.preventDefault();
-    console.log(habitId);
-    if(formData.value <= 0) {
-      alert("Amount must be more than zero!");
-      setFormData({value: 0})
-    } else {
-      console.log(account);
-      console.log(contract);
-      try {
-        await contract.methods.join_habit(habitId).send({from: account, value: (formData.value)*1e18});
-        setFormData({value: 0})
-        alert("Successfully joined habit")
-      } catch(error) {
-        console.log(error);
-      }
-    }
-  };
-
-  return (
-    <Dialog justifycontent="center" fullWidth open={openDialog}>
-      <DialogTitle >Enter a Pledge Amount (ETH)</DialogTitle>
-      <DialogContent >
-        <form autoComplete="off" noValidate onSubmit={handleJoinHabit}>
-          <div>
-            <TextField
-              value={formData.value}
-              variant="outlined"
-              onChange={(e) =>
-                setFormData({ ...formData, value: e.target.value })
-              }
-            />
-          </div>
-          <br/>
-          <Button variant="contained" type="submit">
-            Confirm
-          </Button>
-          <IconButton sx={{position: "absolute", right: "0", top: "0"}} onClick={handleClose}>
-            <CloseIcon/>
-          </IconButton>
-        </form>
-      </DialogContent>
-    </Dialog>
-  );
-};
-
-const JoinHabit = () => {
+const MyHabits = () => {
   const [allHabits, setAllHabits] = useState([]);
-  const [contract, setContract] = useState(null);
   const [accounts, setAccounts] = useState([]);
+  const [contract, setContract] = useState(null);
   const history = useNavigate();
-  const [openDialog, setOpenDialog] = useState(false);
-  const [habitId, setHabitId] = useState(null);
-
 
   useEffect(() => {
-    getAllHabits();
+    getMyHabits();
   }, []);
 
-  const getAllHabits = async () => {
-    console.log("running example...");
+  const todayDate = moment(new Date()).format("DD/MM/YYYY");
+  console.log(todayDate);
+
+  const getMyHabits = async () => {
     try {
       const web3 = await getWeb3();
       const accounts = await web3.eth.getAccounts();
@@ -105,17 +49,39 @@ const JoinHabit = () => {
       var habitArr = [];
       for (let i = 0; i < habitSize; i++) {
         const isUserJoined = await habit.methods
-        .is_user_joined_habit(i, accounts[0])
-        .call();
-      if (isUserJoined) {
-        continue;
-      }
+          .is_user_joined_habit(i, accounts[0])
+          .call();
+        if (!isUserJoined) {
+          continue;
+        }
         const currStartTime = await habit.methods.get_start_time(i).call();
         const currEndTime = await habit.methods.get_end_time(i).call();
         const currHabitType = await habit.methods.get_habit_type(i).call();
         const currOwner = await habit.methods.get_owner(i).call();
         const currPool = await habit.methods.get_pool(i).call();
         const currNumUsers = await habit.methods.get_num_users(i).call();
+        const isLoser = await habit.methods
+          .is_user_a_loser(i, accounts[0])
+          .call();
+        const checkList = await habit.methods
+          .get_user_check_list(i, accounts[0])
+          .call();
+        var verificationState;
+
+        const currTime = Math.floor(Date.now() / 1000);
+        if (currTime >= currStartTime) {
+          const dayDiff = Math.floor(Math.abs(currTime - currStartTime) / 60 / 60 / 24);
+          console.log(dayDiff);
+          const arrTime = checkList;
+          if (arrTime[dayDiff] == 1) {
+            //already verified
+            verificationState = "VERIFIED";
+          } else {
+            verificationState = "VERIFY";
+          }
+        } else {
+          verificationState = "CHALLENGE HAS NOT STARTED";
+        }
 
         const currHabit = {
           startTime: currStartTime,
@@ -125,6 +91,9 @@ const JoinHabit = () => {
           pool: currPool,
           numUsers: currNumUsers,
           habitId: i,
+          isLoser: isLoser,
+          checkList: checkList,
+          verificationState: verificationState,
         };
         habitArr.push(currHabit);
         console.log(allHabits);
@@ -137,9 +106,14 @@ const JoinHabit = () => {
     }
   };
 
-  const handleJoinHabit = (habitId) => {
-    setOpenDialog(true);
-    setHabitId(habitId);
+  const verifyHabit = (verificationState, habitType, habitId) => {
+    if (verificationState == "VERIFY") {
+      if (habitType == 0) {
+        history(`/riseAndShine/${habitId}`);
+      } else {
+        history(`/connectStrava/${habitId}`);
+      }
+    }
   };
 
   if (contract == null) {
@@ -206,22 +180,31 @@ const JoinHabit = () => {
                   </Typography>
                   <Typography>{h.pool / 1e18}ETH</Typography>
                 </div>
-                <div>
-                  <Button variant="contained" onClick={() => handleJoinHabit(h.habitId)}>
-                    Join
-                  </Button>
+                <div style={{ display: "flex", flexDirection: "row" }}>
+                  <Typography fontWeight={"bold"}>Status: &nbsp;</Typography>
+                  {h.isLoser ? (
+                    <Typography color="red">FAILED</Typography>
+                  ) : (
+                    <Typography color="#228B22">ONGOING</Typography>
+                  )}
                 </div>
+                <br />
+                <Button
+                  variant="contained"
+                  onClick={() =>
+                    verifyHabit(h.verificationState, h.habitType, h.habitId)
+                  }
+                >
+                  {h.verificationState}
+                </Button>
               </CardContent>
             </Card>
             <br />
-
           </Grid>
         ))}
       </Grid>
-      {openDialog ? <JoinHabitDialog openDialog={openDialog} setOpenDialog={setOpenDialog} habitId={habitId} contract={contract} account={accounts[0]}/> : null}
-
     </div>
   );
 };
 
-export default JoinHabit;
+export default MyHabits;
